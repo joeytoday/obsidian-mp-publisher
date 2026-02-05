@@ -1,7 +1,6 @@
-import { Notice, requestUrl, TFile } from 'obsidian';
+import { App, Notice, requestUrl, TFile } from 'obsidian';
 import MPPlugin from '../main';
 import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
-import { App } from 'obsidian';
 import { Logger } from '../utils/logger';
 import { cleanObsidianUIElements } from '../utils/html-cleaner';
 import { getPathFromPattern } from '../utils/path-utils';
@@ -301,9 +300,8 @@ export class WechatPublisher {
                 img.setAttribute('src', imageUrl);
             }
 
-            // 使用XMLSerializer安全地获取HTML内容，而不是使用innerHTML
-            const serializer = new XMLSerializer();
-            return serializer.serializeToString(tempDiv);
+            // 使用 innerHTML 而不是 XMLSerializer，避免添加 xmlns 属性
+            return tempDiv.innerHTML;
         } catch (error) {
             this.logger.error('处理文档图片时出错:', error);
             throw error;
@@ -436,9 +434,8 @@ export class WechatPublisher {
             // 使用新的 DOM 清理函数
             cleanObsidianUIElements(tempDiv);
 
-            // 使用XMLSerializer安全地获取HTML内容
-            const serializer = new XMLSerializer();
-            return serializer.serializeToString(tempDiv);
+            // 使用 innerHTML 而不是 XMLSerializer，避免添加 xmlns 属性
+            return tempDiv.innerHTML;
         } catch (error) {
             this.logger.error('清理HTML内容时出错:', error);
             return htmlContent;
@@ -520,8 +517,11 @@ export class WechatPublisher {
 
             // 如果是 40007 错误且我们之前尝试更新现有草稿，可能是草稿 ID 已失效，清除它并重试一次创建新草稿
             if (response.json && response.json.errcode === 40007 && metadata.draft?.media_id) {
-                this.logger.warn('草稿 media_id 已失效，尝试重新创建新草稿');
-                metadata.draft.media_id = ''; // 清除失效的 ID
+                this.logger.warn('草稿 media_id 已失效，清除并重新创建新草稿');
+                
+                // 清除失效的草稿信息
+                delete metadata.draft;
+                await updateMetadata(this.app.vault, file, metadata, assetFolderPath);
                 
                 response = await this.requestWithTokenRetry(async (token) => {
                     return requestUrl({
@@ -654,9 +654,12 @@ export class WechatPublisher {
             case 41005:
                 message = "缺少多媒体文件数据，请检查上传的图片是否有效。";
                 break;
+            case 45166:
+                message = "内容不符合微信规范 (45166)。可能的原因：\n1. 文档包含脚注（微信不支持脚注，请移除后重试）\n2. 图片格式或尺寸不符合要求\n3. HTML 包含不支持的标签或样式\n请检查文档内容。";
+                break;
         }
 
         this.logger.error(message);
-        new Notice(message, 5000); // 显示5秒
+        new Notice(message, 8000); // 显示8秒
     }
 }

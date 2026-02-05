@@ -60,10 +60,6 @@ export interface Template {
             cell: string;
         };
         hr: string;
-        footnote: {
-            ref: string;
-            backref: string;
-        };
     };
 }
 
@@ -204,14 +200,6 @@ export class TemplateManager {
         // 应用分割线样式
         element.querySelectorAll('hr').forEach(el => {
             el.setAttribute('style', styles.hr);
-        });
-
-        // 应用脚注样式
-        element.querySelectorAll('.footnote-ref').forEach(el => {
-            el.setAttribute('style', styles.footnote.ref);
-        });
-        element.querySelectorAll('.footnote-backref').forEach(el => {
-            el.setAttribute('style', styles.footnote.backref);
         });
 
         // 应用图片样式

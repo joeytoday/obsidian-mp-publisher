@@ -79,11 +79,7 @@ export class CreateTemplateModal extends Modal {
                 header: "background: #f8f9fc; font-weight: bold; color: #4a4a4a; border-bottom: 2px solid #e1e4e8; font-size: 1em;",
                 cell: "border: 1px solid #f0f0f0; padding: 8px; color: #4a4a4a; font-size: 1em;"
             },
-            hr: "border: none; border-top: 1px solid #eef0f7; margin: 20px 0;",
-            footnote: {
-                ref: "color: #e0e0e0; text-decoration: none; font-size: 0.9em;",
-                backref: "color: #e0e0e0; text-decoration: none; font-size: 0.9em;"
-            }
+            hr: "border: none; border-top: 1px solid #eef0f7; margin: 20px 0;"
         };
     }
 
@@ -176,7 +172,6 @@ export class CreateTemplateModal extends Modal {
         this.addStyleSettings(settingContainer, '链接样式', this.template.styles);
         this.addStyleSettings(settingContainer, '表格样式', this.template.styles.table);
         this.addStyleSettings(settingContainer, '分隔线样式', this.template.styles);
-        this.addStyleSettings(settingContainer, '脚注样式', this.template.styles.footnote);
 
         // 保存和取消按钮
         const buttonContainer = contentEl.createDiv('modal-button-container');
@@ -279,10 +274,6 @@ export class CreateTemplateModal extends Modal {
                     this.template.styles.hr = defaultStyles.hr;
                     styles = { hr: defaultStyles.hr };
                     break;
-                case '脚注样式':
-                    this.template.styles.footnote = defaultStyles.footnote;
-                    styles = defaultStyles.footnote;
-                    break;
                 case '图片样式':
                     this.template.styles.image = defaultStyles.image;
                     styles = { image: defaultStyles.image };
@@ -336,9 +327,6 @@ export class CreateTemplateModal extends Modal {
             case '分隔线样式':
                 this.addHrSettings(content, styles);
                 break;
-            case '脚注样式':
-                this.addFootnoteSettings(content, styles);
-                break;
             case '图片样式':
                 this.addImageSettings(content, styles);
                 break;
@@ -389,11 +377,6 @@ export class CreateTemplateModal extends Modal {
                         // 更新表格颜色
                         styles.table.header = styles.table.header.replace(/color:\s*#[a-fA-F0-9]+/, `color: ${value}`);
                         styles.table.cell = styles.table.cell.replace(/color:\s*#[a-fA-F0-9]+/, `color: ${value}`);
-
-                        // 更新脚注颜色
-                        ['ref', 'backref'].forEach(key => {
-                            styles.footnote[key] = styles.footnote[key].replace(/color:\s*#[a-fA-F0-9]+/, `color: ${value}`);
-                        });
 
                         // 更新图片边框颜色
                         styles.image = styles.image.replace(/border:\s*1px solid\s*#[a-fA-F0-9]+80/, `border: 1px solid ${value}80`);
@@ -1093,36 +1076,6 @@ export class CreateTemplateModal extends Modal {
                     .onChange(value => {
                         const margin = parseInt(value) || 28;
                         styles.hr = styles.hr.replace(/margin:\s*\d+px/, `margin: ${margin}px`);
-                    });
-            });
-    }
-
-    private addFootnoteSettings(container: HTMLElement, styles: any) {
-        const footnoteSection = container.createDiv('footnote-section');
-
-        new Setting(footnoteSection)
-            .setName('脚注颜色')
-            .setDesc('设置脚注引用和返回链接的颜色')
-            .addColorPicker(color => {
-                const currentColor = styles.ref.match(/color:\s*(#[a-fA-F0-9]+)/)?.[1];
-                color.setValue(currentColor)
-                    .onChange(value => {
-                        styles.ref = styles.ref.replace(/color:\s*#[a-fA-F0-9]+/, `color: ${value}`);
-                        styles.backref = styles.backref.replace(/color:\s*#[a-fA-F0-9]+/, `color: ${value}`);
-                    });
-            });
-
-        new Setting(footnoteSection)
-            .setName('字体样式')
-            .setDesc('选择脚注的字体样式')
-            .addDropdown(dropdown => {
-                dropdown.addOption('normal', '常规')
-                    .addOption('italic', '斜体')
-                    .setValue(styles.ref.includes('font-style: italic') ? 'italic' : 'normal')
-                    .onChange(value => {
-                        const style = value === 'italic' ? 'italic' : 'normal';
-                        styles.ref = styles.ref.replace(/font-style:[^;]*;/, `font-style: ${style};`);
-                        styles.backref = styles.backref.replace(/font-style:[^;]*;/, `font-style: ${style};`);
                     });
             });
     }

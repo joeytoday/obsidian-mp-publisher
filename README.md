@@ -2,7 +2,9 @@
 
 一个功能强大的 Obsidian 插件，支持自定义样式预览和一键发布到微信公众号。
 
-[![]()]()
+👇 点击播放演示视频
+
+https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 ## ✨ 功能特点
 
@@ -31,12 +33,9 @@
 
 ## 📦 安装
 
-### 从 Obsidian 社区插件安装（推荐）
-1. 打开 Obsidian 设置
-2. 进入"第三方插件"
-3. 关闭"安全模式"
-4. 点击"浏览"并搜索"MP Publisher"
-5. 点击安装并启用
+### 下载安装包
+1. 从release中下载 mp-publisher 压缩包
+2. 解压后移动到 `<vault>/.obsidian/plugins/` 目录
 
 ### 手动安装
 1. 下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`
@@ -55,7 +54,7 @@
 ### 发布到微信公众号
 1. **配置 API**：
    - 打开插件设置
-   - 填入微信公众号的 AppID 和 AppSecret
+   - 进入微信开发平台，填入微信公众号的 AppID 和 AppSecret
    - 设置图片附件存储位置（默认：`[文档名]__assets`）
 
 2. **发布文章**：

@@ -1,10 +1,3 @@
-import { Logger } from './logger';
-import { App } from 'obsidian';
-
-/**
- * 清理HTML内容，移除Obsidian特有的UI元素
- * 这个函数可以在预览和发布时共享使用
- */
 /**
  * 清理HTML内容，移除Obsidian特有的UI元素
  * 直接操作 DOM 元素，避免反复序列化和解析带来的风险
@@ -84,6 +77,34 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
             const textNode = document.createTextNode(isChecked ? '[x] ' : '[ ] ');
             checkbox.parentNode?.insertBefore(textNode, checkbox);
             checkbox.remove();
+        });
+
+        // 移除脚注相关元素（微信不支持）
+        const footnoteElements = element.querySelectorAll('.footnote-ref, .footnote-backref, .footnotes, section.footnotes, [role="doc-noteref"], [role="doc-backlink"]');
+        footnoteElements.forEach(el => {
+            el.remove();
+        });
+
+        // 移除微信不支持的属性
+        const allElements = element.querySelectorAll('*');
+        allElements.forEach(el => {
+            // 移除 data-* 属性
+            Array.from(el.attributes).forEach(attr => {
+                if (attr.name.startsWith('data-')) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+
+            // 移除其他可能导致问题的属性
+            el.removeAttribute('contenteditable');
+            el.removeAttribute('draggable');
+            el.removeAttribute('spellcheck');
+            el.removeAttribute('role');
+            el.removeAttribute('aria-label');
+            el.removeAttribute('aria-hidden');
+            el.removeAttribute('tabindex');
+            el.removeAttribute('dir');
+            el.removeAttribute('translate');
         });
 
     } catch (error) {

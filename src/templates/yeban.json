@@ -35,7 +35,11 @@
             "header": {
                 "container": "margin-bottom: 1em; display: flex; gap: 6px;",
                 "dot": "width: 12px; height: 12px; border-radius: 50%;",
-                "colors": ["#ff5f56", "#ffbd2e", "#27c93f"]
+                "colors": [
+                    "#ff5f56",
+                    "#ffbd2e",
+                    "#27c93f"
+                ]
             },
             "block": "color: #333; background: #f8f9fc; border-radius: 8px; border: 1px solid #eef0f7; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 1.2em 0; padding: 1em 1em 1em;  font-size: 14px; line-height: 1.6; white-space: pre-wrap;",
             "inline": "background: #f8f9fc; padding: 2px 6px; border-radius: 4px; color: #333; font-size: 14px; border: 1px solid #eef0f7;"
@@ -53,10 +57,6 @@
             "header": "background: #f8f9fc; font-weight: bold; color: #4a4a4a; border-bottom: 2px solid #e1e4e8; font-size: 1em;",
             "cell": "border: 1px solid #f0f0f0; padding: 8px; color: #4a4a4a; font-size: 1em;"
         },
-        "hr": "border: none; border-top: 1px solid #eef0f7; margin: 20px 0;",
-        "footnote": {
-            "ref": "color: #e0e0e0; text-decoration: none; font-size: 0.9em;",
-            "backref": "color: #e0e0e0; text-decoration: none; font-size: 0.9em;"
-        }
+        "hr": "border: none; border-top: 1px solid #eef0f7; margin: 20px 0;"
     }
 }

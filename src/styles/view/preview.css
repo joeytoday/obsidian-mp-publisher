@@ -63,13 +63,6 @@
     margin-right: 6px;
 }
 
-/* 脚注样式 */
-.mp-content-section .footnote-ref,
-.mp-content-section .footnote-backref {
-    color: var(--text-accent);
-    text-decoration: none;
-}
-
 /* 图片样式 */
 .mp-content-section img {
     max-width: 100%;

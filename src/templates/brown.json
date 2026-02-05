@@ -33,15 +33,15 @@
         },
         "code": {
             "header": {
-            "container": "margin-bottom: 1em; display: flex; gap: 6px;",
-            "dot": "width: 12px; height: 12px; border-radius: 50%;",
-            "colors": [
-              "#ff5f56",
-              "#ffbd2e",
-              "#27c93f"
-            ]
-          },
-          "block": "color: #333; background: #fef7ed; border-radius: 8px; border: 1px solid #f5e2c7; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 1.2em 0; padding: 1em 1em 1em;  font-size: 14px; line-height: 1.6; white-space: pre-wrap;",
+                "container": "margin-bottom: 1em; display: flex; gap: 6px;",
+                "dot": "width: 12px; height: 12px; border-radius: 50%;",
+                "colors": [
+                    "#ff5f56",
+                    "#ffbd2e",
+                    "#27c93f"
+                ]
+            },
+            "block": "color: #333; background: #fef7ed; border-radius: 8px; border: 1px solid #f5e2c7; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 1.2em 0; padding: 1em 1em 1em;  font-size: 14px; line-height: 1.6; white-space: pre-wrap;",
             "inline": "background: #fef7ed; padding: 2px 6px; border-radius: 4px; color: #333; font-size: 14px; border: 1px solid #f5e2c7;"
         },
         "quote": "border-left: 4px solid #c57512; border-radius: 6px; padding: 10px 10px; background: #fef7ed; margin: 0.8em 0; color: #8b6d4d; font-style: italic; word-wrap: break-word;",
@@ -57,10 +57,6 @@
             "header": "background: #fef7ed; font-weight: bold; color: #c57512; border-bottom: 2px solid #f5e2c7; font-size: 1em;",
             "cell": "border: 1px solid #f5e2c7; padding: 8px; color: #4a4a4a; font-size: 1em;"
         },
-        "hr": "border: none; border-top: 1px solid #f5e2c7; margin: 20px 0;",
-        "footnote": {
-            "ref": "color: #c57512; text-decoration: none; font-size: 0.9em;",
-            "backref": "color: #c57512; text-decoration: none; font-size: 0.9em;"
-        }
+        "hr": "border: none; border-top: 1px solid #f5e2c7; margin: 20px 0;"
     }
 }
