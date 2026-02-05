@@ -2,9 +2,9 @@
 	"id": "mp-publisher",
 	"name": "MP Publisher",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "0.5.0",
 	"description": "公众号发布插件，支持自定义样式预览和一键发布到微信公众号",
-	"author": "Your Name",
-	"authorUrl": "",
-	"isDesktopOnly": false
+	"author": "joeytoday",
+	"authorUrl": "https://github.com/joeytoday",
+	"isDesktopOnly": true
 }

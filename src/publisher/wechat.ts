@@ -286,7 +286,7 @@ export class WechatPublisher {
 
             // 获取所有图片元素
             const images = tempDiv.querySelectorAll('img');
-            this.logger.debug(`images: ${images}`);
+            this.logger.debug(`发现 ${images.length} 张图片需要处理`);
 
             // 处理每个图片
             for (const img of Array.from(images)) {
@@ -472,7 +472,7 @@ export class WechatPublisher {
             };
 
             // 使用带重试机制的请求
-            const response = await this.requestWithTokenRetry(async (token) => {
+            let response = await this.requestWithTokenRetry(async (token) => {
                 if (metadata.draft?.media_id) {
                     // 更新现有草稿
                     return requestUrl({
@@ -517,6 +517,33 @@ export class WechatPublisher {
             });
 
             this.logger.debug(`response: ${JSON.stringify(response)}`);
+
+            // 如果是 40007 错误且我们之前尝试更新现有草稿，可能是草稿 ID 已失效，清除它并重试一次创建新草稿
+            if (response.json && response.json.errcode === 40007 && metadata.draft?.media_id) {
+                this.logger.warn('草稿 media_id 已失效，尝试重新创建新草稿');
+                metadata.draft.media_id = ''; // 清除失效的 ID
+                
+                response = await this.requestWithTokenRetry(async (token) => {
+                    return requestUrl({
+                        url: `https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${token}`,
+                        method: 'POST',
+                        body: JSON.stringify({
+                            articles: [{
+                                title,
+                                content: processedContent,
+                                thumb_media_id,
+                                author: '',
+                                digest: '',
+                                show_cover_pic: thumb_media_id ? 1 : 0,
+                                content_source_url: '',
+                                need_open_comment: 0,
+                                only_fans_can_comment: 0
+                            }]
+                        })
+                    });
+                });
+                this.logger.debug(`retry response: ${JSON.stringify(response)}`);
+            }
 
             if (response.status === 200) {
                 // 检查业务错误码
@@ -608,6 +635,9 @@ export class WechatPublisher {
                 break;
             case 40013:
                 message = "AppID 无效，请检查插件设置中的 AppID。";
+                break;
+            case 40007:
+                message = "无效的媒体文件 ID (media_id)。这可能是因为素材已过期、被删除，或草稿 ID 已失效。如果是封面图问题，请尝试重新选择封面图。";
                 break;
             case 40003:
                 message = "OpenID 无效，请确保用户已关注公众号。";
