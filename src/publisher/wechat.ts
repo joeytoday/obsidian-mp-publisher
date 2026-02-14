@@ -1,7 +1,6 @@
-import { Notice, requestUrl, TFile } from 'obsidian';
+import { App, Notice, requestUrl, TFile } from 'obsidian';
 import MPPlugin from '../main';
 import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
-import { App } from 'obsidian';
 import { Logger } from '../utils/logger';
 import { cleanObsidianUIElements } from '../utils/html-cleaner';
 import { getPathFromPattern } from '../utils/path-utils';
