@@ -2,8 +2,6 @@
 
 一个功能强大的 Obsidian 插件，支持自定义样式预览和一键发布到微信公众号。
 
-👇 点击播放演示视频
-
 https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 ## ✨ 功能特点
@@ -33,9 +31,12 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 ## 📦 安装
 
-### 下载安装包
-1. 从release中下载 mp-publisher 压缩包
-2. 解压后移动到 `<vault>/.obsidian/plugins/` 目录
+### 从 Obsidian 社区插件安装（推荐）
+1. 打开 Obsidian 设置
+2. 进入"第三方插件"
+3. 关闭"安全模式"
+4. 点击"浏览"并搜索"MP Publisher"
+5. 点击安装并启用
 
 ### 手动安装
 1. 下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`
@@ -54,7 +55,7 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 ### 发布到微信公众号
 1. **配置 API**：
    - 打开插件设置
-   - 进入微信开发平台，填入微信公众号的 AppID 和 AppSecret
+   - 填入微信公众号的 AppID 和 AppSecret
    - 设置图片附件存储位置（默认：`[文档名]__assets`）
 
 2. **发布文章**：
@@ -138,6 +139,18 @@ A: 登录微信公众平台 > 素材管理 > 草稿箱，可以看到发布的�
 ### Q: 样式在公众号编辑器中不正确？
 A: 使用"复制到公众号"功能，确保通过剪贴板粘贴到公众号编辑器。
 
+### Q: 发布时提示"IP 白名单错误"（错误码 40164）？
+A: 这是由于微信公众平台的 IP 白名单安全机制导致的。解决方法：
+   1. 登录[微信公众平台](https://mp.weixin.qq.com/)
+   2. 进入「设置与开发」→「基本配置」→「IP 白名单」
+   3. 点击「修改」并添加提示中的 IP 地址（如 `127.1xx.1xx.xx`）
+   4. 使用管理员微信扫码确认保存
+   
+   ⚠️ **注意事项**：
+   - 如果你的网络使用动态 IP，每次 IP 变化后都需要更新白名单
+   - 修改白名单后可能需要等待 5-10 分钟才能生效
+   - 你可以通过访问 [whatismyip.com](https://www.whatismyip.com/) 查看当前公网 IP
+
 ### Q: 其他使用问题
 A: [Quick Start](./QUICKSTART.md)
 
@@ -158,3 +171,4 @@ MIT License
 ---
 
 **如果这个插件对你有帮助，欢迎 Star ⭐️**
+
