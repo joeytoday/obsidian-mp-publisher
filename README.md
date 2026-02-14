@@ -2,7 +2,8 @@
 
 一个功能强大的 Obsidian 插件，支持自定义样式预览和一键发布到微信公众号。
 
-[![](https://img.joeytoday.com/2026/iShot_2026-02-05_21.52.11.png)](https://img.joeytoday.com/2026/mycase-mp-publisher-start.mp4)
+👇 点击播放演示视频
+https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 ## ✨ 功能特点
 
