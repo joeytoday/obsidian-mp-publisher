@@ -37,6 +37,7 @@ const options = {
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
+	minify: prod, // 生产模式启用代码压缩
 	outfile: 'main.js',
 };
 

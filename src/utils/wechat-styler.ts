@@ -1,6 +1,4 @@
 import { App } from 'obsidian';
-import * as juice from 'juice';
-import hljs from 'highlight.js';
 import { Logger } from './logger';
 import { ThemeConfig, WechatThemeStyle } from '../types/wechat-theme';
 
@@ -415,8 +413,27 @@ rt {
     /**
      * 应用代码高亮
      */
-    private applyCodeHighlighting(html: string): string {
+    private async applyCodeHighlighting(html: string): Promise<string> {
         try {
+            // 动态导入 highlight.js 以减小打包体积
+            const hljs = await import('highlight.js/lib/core');
+            
+            // 按需注册常用语言（这些语言覆盖大部分使用场景）
+            const commonLanguages = [
+                'javascript', 'typescript', 'python', 'java', 'cpp', 'c',
+                'bash', 'json', 'yaml', 'markdown', 'html', 'css', 'sql',
+                'go', 'rust', 'php', 'ruby', 'swift', 'kotlin'
+            ];
+            
+            await Promise.all(commonLanguages.map(async (lang) => {
+                try {
+                    const module = await import(`highlight.js/lib/languages/${lang}`);
+                    hljs.default.registerLanguage(lang, module.default);
+                } catch (e) {
+                    // 忽略加载失败的语言
+                }
+            }));
+
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
@@ -444,7 +461,7 @@ rt {
 
                 // 尝试自动检测语言并高亮
                 try {
-                    const result = hljs.highlightAuto(code);
+                    const result = hljs.default.highlightAuto(code);
                     codeElement.innerHTML = result.value;
                     codeElement.classList.add('hljs');
                 } catch (error) {
@@ -1123,7 +1140,7 @@ rt {
             const wrappedContent = `<div class="wechat-content">${htmlContent}</div>`;
 
             // 3. 应用代码高亮
-            const highlightedContent = this.applyCodeHighlighting(wrappedContent);
+            const highlightedContent = await this.applyCodeHighlighting(wrappedContent);
 
             // 3.5. 转换 MathJax 公式为 SVG（仅在发布时）
             const mathConvertedContent = convertMath
@@ -1206,8 +1223,9 @@ rt {
 
             const contentToInline = protectContent(decoratedContent);
 
-            // 4. 使用 juice 将 CSS 内联到 HTML 中
-            const inlineResult = juice.inlineContent(contentToInline, themeCSS, {
+            // 4. 动态导入并使用 juice 将 CSS 内联到 HTML 中
+            const { inlineContent } = await import('juice');
+            const inlineResult = inlineContent(contentToInline, themeCSS, {
                 applyStyleTags: true,
                 removeStyleTags: true,
                 preserveMediaQueries: false,
