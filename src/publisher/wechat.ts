@@ -165,9 +165,25 @@ export class WechatPublisher {
 
                 if (!tokenResponse.json.access_token) {
                     this.logger.error("获取微信访问令牌业务失败: ", tokenResponse.json);
+                    const errcode = tokenResponse.json.errcode;
+                    const errmsg = tokenResponse.json.errmsg || '未知错误';
+                    
                     // 业务失败通常不需要重试，除非是特定错误
                     if (attempt === maxRetries) {
-                        new Notice(`获取微信访问令牌失败: ${tokenResponse.json.errmsg || '未知错误'}`);
+                        // 针对 IP 白名单错误提供明确的提示
+                        if (errcode === 40164 || errmsg?.includes('not in whitelist')) {
+                            const ipMatch = errmsg?.match(/(\d+\.\d+\.\d+\.\d+)/);
+                            const ip = ipMatch ? ipMatch[1] : '当前IP';
+                            new Notice(`IP 白名单错误：${ip} 不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`, 8000);
+                        } else if (errcode === 41002 || errmsg?.includes('appid missing')) {
+                            new Notice('AppID 为空，请在插件设置中填写微信公众号的 AppID。');
+                        } else if (errcode === 40013) {
+                            new Notice('AppID 无效，请检查插件设置中的 AppID 是否正确。');
+                        } else if (errcode === 40125 || errmsg?.includes('secret')) {
+                            new Notice('AppSecret 无效，请检查插件设置中的 AppSecret 是否正确。');
+                        } else {
+                            new Notice(`获取微信访问令牌失败: ${errmsg}`);
+                        }
                         return '';
                     }
                     continue; // 尝试重试
@@ -589,7 +605,7 @@ export class WechatPublisher {
                 }
 
                 const accessToken = await this.getAccessToken();
-                if (!accessToken) throw new Error("无法获取Access Token");
+                if (!accessToken) throw new Error("无法获取 Access Token，请检查：1. AppID 和 AppSecret 是否正确；2. 当前 IP 是否已添加到微信公众平台白名单（设置与开发 → 基本配置 → IP 白名单）");
 
                 let response = await requestFn(accessToken);
 
@@ -631,6 +647,9 @@ export class WechatPublisher {
             case 40014:
             case 42001:
                 message = "Access Token 已过期或无效，请尝试重新登录或检查配置。";
+                break;
+            case 41002:
+                message = "AppID 为空，请在插件设置中填写微信公众号的 AppID。";
                 break;
             case 40013:
                 message = "AppID 无效，请检查插件设置中的 AppID。";

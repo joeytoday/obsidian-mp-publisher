@@ -8,15 +8,18 @@ node_modules/
 
 # Build output
 main.js.map
+main.js
 *.js.map
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDEs and editors
 .vscode/
 .idea/
+.qwen/
+.qoder/
 
 # TypeScript cache
 *.tsbuildinfo
