@@ -39,17 +39,10 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 5. 点击安装并启用
 
 ### 手动安装
-1. 下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`
-2. 将文件复制到 `<vault>/.obsidian/plugins/mp-publisher/` 目录
+1. 下载最新版本的 release `mp-publisher.zip` 文件
+2. 将文件解压到 `<vault>/.obsidian/plugins/` 目录
 3. 重新加载 Obsidian
 4. 在设置中启用插件
-
-### 从源代码构建
-```bash
-cd mp-publisher
-npm install
-npm run build
-```
 
 ## 🚀 快速开始
 
@@ -59,6 +52,7 @@ npm run build
    - 登录 [微信公众平台](https://mp.weixin.qq.com/)
    - 进入"设置与开发" > "基本配置"
    - 记录你的 `AppID` 和 `AppSecret`
+   - 在 `APP IP 白名单`中输入你的本地 ip 地址，不知道的可以问问 AI
 
 2. **在插件中配置**
    - 打开 Obsidian 设置
