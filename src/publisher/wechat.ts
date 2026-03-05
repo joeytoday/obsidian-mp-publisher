@@ -59,7 +59,7 @@ export class WechatPublisher {
             });
 
             if (materialsResponse.json.errcode && materialsResponse.json.errcode !== 0) {
-                this.handleWechatError(materialsResponse.json);
+                await this.handleWechatError(materialsResponse.json);
                 return { items: [], totalCount: 0 };
             }
 
@@ -172,9 +172,11 @@ export class WechatPublisher {
                     if (attempt === maxRetries) {
                         // 针对 IP 白名单错误提供明确的提示
                         if (errcode === 40164 || errmsg?.includes('not in whitelist')) {
-                            const ipMatch = errmsg?.match(/(\d+\.\d+\.\d+\.\d+)/);
-                            const ip = ipMatch ? ipMatch[1] : '当前IP';
-                            new Notice(`IP 白名单错误：${ip} 不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`, 8000);
+                            let detectedIP = errmsg?.match(/(\d+\.\d+\.\d+\.\d+)/)?.[1];
+                            if (!detectedIP) {
+                                detectedIP = await this.fetchPublicIP();
+                            }
+                            new Notice(`IP 白名单错误：您的公网 IP 地址为 ${detectedIP}，不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`, 8000);
                         } else if (errcode === 41002 || errmsg?.includes('appid missing')) {
                             new Notice('AppID 为空，请在插件设置中填写微信公众号的 AppID。');
                         } else if (errcode === 40013) {
@@ -254,7 +256,7 @@ export class WechatPublisher {
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
             if (response.json.errcode && response.json.errcode !== 0) {
-                this.handleWechatError(response.json);
+                await this.handleWechatError(response.json);
                 throw new Error(response.json.errmsg);
             }
 
@@ -563,7 +565,7 @@ export class WechatPublisher {
             if (response.status === 200) {
                 // 检查业务错误码
                 if (response.json.errcode && response.json.errcode !== 0) {
-                    this.handleWechatError(response.json);
+                    await this.handleWechatError(response.json);
                     return false;
                 }
 
@@ -634,8 +636,29 @@ export class WechatPublisher {
         }
     }
 
+    // 获取本机公网 IP 地址
+    private async fetchPublicIP(): Promise<string> {
+        try {
+            const response = await requestUrl({
+                url: 'https://api.ipify.org?format=json',
+                method: 'GET',
+            });
+            return response.json?.ip || '未知';
+        } catch {
+            try {
+                const response = await requestUrl({
+                    url: 'https://ifconfig.me/ip',
+                    method: 'GET',
+                });
+                return response.text?.trim() || '未知';
+            } catch {
+                return '未知（获取失败，请自行查询）';
+            }
+        }
+    }
+
     // 统一处理微信API错误
-    private handleWechatError(responseJson: any) {
+    private async handleWechatError(responseJson: any) {
         const errcode = responseJson.errcode;
         const errmsg = responseJson.errmsg;
 
@@ -672,11 +695,14 @@ export class WechatPublisher {
             case 41005:
                 message = "缺少多媒体文件数据，请检查上传的图片是否有效。";
                 break;
-            case 40164:
-                const ipMatch = errmsg?.match(/\d+\.\d+\.\d+\.\d+/);
-                const ip = ipMatch ? ipMatch[0] : '当前IP';
-                message = `IP 白名单错误：${ip} 不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`;
+            case 40164: {
+                let detectedIP = errmsg?.match(/\d+\.\d+\.\d+\.\d+/)?.[0];
+                if (!detectedIP) {
+                    detectedIP = await this.fetchPublicIP();
+                }
+                message = `IP 白名单错误：您的公网 IP 地址为 ${detectedIP}，不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`;
                 break;
+            }
         }
 
         this.logger.error(message);
