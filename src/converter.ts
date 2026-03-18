@@ -231,14 +231,12 @@ export async function markdownToHtml(
         // 确保公众号后台和跨设备粘贴时样式不丢失）
         const themeCSS = themeManager ? themeManager.getActiveThemeCSS() : '';
 
-        // 序列化 HTML
+        // 序列化 HTML - 直接序列化 section，避免额外的 div 包裹（与复制功能一致）
+        const section = tempDiv.querySelector('.mp-content-section');
         const serializer = new XMLSerializer();
-        const cleanContainer = document.createElement('div');
-        while (tempDiv.firstChild) {
-            cleanContainer.appendChild(tempDiv.firstChild);
-        }
-
-        let htmlContent = serializer.serializeToString(cleanContainer);
+        let htmlContent = section 
+            ? serializer.serializeToString(section)
+            : serializer.serializeToString(tempDiv);
         htmlContent = htmlContent.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
 
         // 使用 juice 将 CSS 内联到 HTML
