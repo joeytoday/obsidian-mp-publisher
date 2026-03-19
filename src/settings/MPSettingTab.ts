@@ -57,19 +57,6 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                 }));
 
-        // 图片存储位置设置
-        new Setting(containerEl)
-            .setName('图片存储位置')
-            .setDesc('设置图片保存的文件夹路径。支持使用 ${filename} 代表当前文档的文件名')
-            .addText(text => text
-                .setPlaceholder('${filename}__assets')
-                .setValue(this.plugin.settingsManager.getSettings().imageAttachmentLocation || '')
-                .onChange(async (value) => {
-                    await this.plugin.settingsManager.updateSettings({
-                        imageAttachmentLocation: value,
-                    });
-                }));
-
         // 调试模式
         new Setting(containerEl)
             .setName('调试模式')

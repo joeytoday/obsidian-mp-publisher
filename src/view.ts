@@ -20,6 +20,11 @@ export class MPView extends ItemView {
     private fontSizeSelect: HTMLInputElement;
     private plugin: any;
 
+    /** 获取预览区域的 DOM 元素（供发布流程复用） */
+    getPreviewElement(): HTMLElement {
+        return this.previewEl;
+    }
+
     constructor(
         leaf: WorkspaceLeaf,
         themeManager: ThemeManager,

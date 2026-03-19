@@ -2,8 +2,6 @@ import { App, Notice, requestUrl, TFile } from 'obsidian';
 import MPPlugin from '../main';
 import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
-import { cleanObsidianUIElements } from '../utils/html-cleaner';
-import { getPathFromPattern } from '../utils/path-utils';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
 
 // 微信素材类型接口
@@ -35,10 +33,6 @@ export class WechatPublisher {
         this.app = app;
         this.plugin = plugin;
         this.logger = Logger.getInstance(app);
-    }
-
-    private getAssetFolderPath(file: TFile): string {
-        return getPathFromPattern(this.plugin.settings.imageAttachmentLocation, file);
     }
 
     // 获取微信素材库列表（支持分页）
@@ -277,7 +271,6 @@ export class WechatPublisher {
     async processDocumentImages(
         content: string,
         file: TFile,
-        assetFolderPath?: string,
         onProgress?: (current: number, total: number, imageName?: string) => void
     ): Promise<string> {
         try {
@@ -285,23 +278,13 @@ export class WechatPublisher {
                 throw new Error('文件必须在文件夹中');
             }
 
-            // 获取或创建元数据
-            const resolvedAssetFolderPath = assetFolderPath || this.getAssetFolderPath(file);
-            const metadata = await getOrCreateMetadata(this.app.vault, file, resolvedAssetFolderPath);
+            // 获取或创建元数据（存储在插件 data.json 中，不再生成文件系统上的文件夹）
+            const metadata = getOrCreateMetadata(this.plugin, file);
 
-            // 创建临时DOM解析HTML内容
+            // 使用 innerHTML 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
             const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
 
-            // 使用安全的方法添加内容
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(content, 'text/html');
-
-            // 将解析后的内容转移到临时div
-            Array.from(doc.body.childNodes).forEach(node => {
-                tempDiv.appendChild(document.importNode(node, true));
-            });
-
-            // 获取所有图片元素
             // 获取所有图片元素
             const images = tempDiv.querySelectorAll('img');
             const totalImages = images.length;
@@ -320,16 +303,16 @@ export class WechatPublisher {
                 }
 
                 // 处理图片并获取微信 URL (现在也处理 http 图片以供自动上传)
-                const imageUrl = await this.processImage(src, file, metadata, resolvedAssetFolderPath);
+                const imageUrl = await this.processImage(src, file, metadata);
                 if (!imageUrl) continue;
 
                 // 更新图片 src 为微信 URL
                 img.setAttribute('src', imageUrl);
                 processedCount++;
             }
-            // 使用XMLSerializer安全地获取HTML内容，而不是使用innerHTML
-            const serializer = new XMLSerializer();
-            return serializer.serializeToString(tempDiv);
+
+            // 使用 innerHTML 输出，保持与输入一致的 HTML 结构，不引入额外的 xmlns 等属性
+            return tempDiv.innerHTML;
         } catch (error) {
             this.logger.error('处理文档图片时出错:', error);
             throw error;
@@ -341,7 +324,6 @@ export class WechatPublisher {
         imagePath: string,
         file: TFile,
         metadata: any,
-        assetFolderPath: string
     ): Promise<string | null> {
         try {
             // 1. 处理 Base64 Data URL (通常是公式转换生成的)
@@ -391,7 +373,7 @@ export class WechatPublisher {
                             uploadTime: Date.now()
                         };
                         addImageMetadata(metadata, imagePath, imageMetadata);
-                        await updateMetadata(this.app.vault, file, metadata, assetFolderPath);
+                        await updateMetadata(this.plugin, file, metadata);
                     } catch (e) {
                         this.logger.error(`处理网络图片异常: ${imagePath}`, e);
                         return null;
@@ -437,37 +419,13 @@ export class WechatPublisher {
                     uploadTime: Date.now()
                 };
                 addImageMetadata(metadata, fileName, imageMetadata);
-                await updateMetadata(this.app.vault, file, metadata, assetFolderPath);
+                await updateMetadata(this.plugin, file, metadata);
             }
 
             return imageMetadata.url;
         } catch (error) {
             this.logger.error('处理图片时出错:', error);
             return null;
-        }
-    }
-
-    // 清理HTML内容，移除Obsidian特有的UI元素
-    private cleanHtmlForWechat(htmlContent: string): string {
-        try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlContent, 'text/html');
-            const tempDiv = document.createElement('div');
-
-            // 将解析后的内容转移到临时div
-            Array.from(doc.body.childNodes).forEach(node => {
-                tempDiv.appendChild(document.importNode(node, true));
-            });
-
-            // 使用新的 DOM 清理函数
-            cleanObsidianUIElements(tempDiv);
-
-            // 使用XMLSerializer安全地获取HTML内容
-            const serializer = new XMLSerializer();
-            return serializer.serializeToString(tempDiv);
-        } catch (error) {
-            this.logger.error('清理HTML内容时出错:', error);
-            return htmlContent;
         }
     }
 
@@ -482,24 +440,20 @@ export class WechatPublisher {
             // 获取进度指示器
             const progress = getProgressIndicator(this.app);
             
-            // 先统计图片数量
-            const tempDiv = document.createElement('div');
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(content, 'text/html');
-            tempDiv.appendChild(document.importNode(doc.body, true));
-            const imageCount = tempDiv.querySelectorAll('img').length;
+            // 使用 innerHTML 统计图片数量，避免 DOMParser 破坏已内联的样式结构
+            const countDiv = document.createElement('div');
+            countDiv.innerHTML = content;
+            const imageCount = countDiv.querySelectorAll('img').length;
             
             // 显示进度指示器（图片数量 + 1 个发布步骤）
             const totalSteps = imageCount + 1;
             progress.show(totalSteps, '正在发布到微信公众号...');
             
-            // 处理文档中的图片
-            const assetFolderPath = this.getAssetFolderPath(file);
+            // 处理文档中的图片（上传到微信并替换 src）
             let processedCount = 0;
             let processedContent = await this.processDocumentImages(
                 content, 
                 file, 
-                assetFolderPath,
                 (current, total, imageName) => {
                     processedCount = current;
                     progress.updateProgress(
@@ -510,11 +464,11 @@ export class WechatPublisher {
                 }
             );
 
-            // 清理HTML内容，移除Obsidian UI元素
-            processedContent = this.cleanHtmlForWechat(processedContent);
+            // 注意：不再调用 cleanHtmlForWechat，因为传入的 content 已经是
+            // 通过 CopyManager.getInlinedHtml 生成的干净 HTML（已内联样式、已清理属性）
 
             // 获取元数据
-            const metadata = await getOrCreateMetadata(this.app.vault, file, assetFolderPath);
+            const metadata = getOrCreateMetadata(this.plugin, file);
 
             // 准备更新数据
             let updateData = {
@@ -614,7 +568,7 @@ export class WechatPublisher {
                 }
 
                 updateDraftMetadata(metadata, updateData);
-                await updateMetadata(this.app.vault, file, metadata, assetFolderPath);
+                await updateMetadata(this.plugin, file, metadata);
 
                 // 显示成功状态
                 progress.showSuccess('发布成功！');

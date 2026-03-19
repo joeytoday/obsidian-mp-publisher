@@ -76,36 +76,56 @@ export class CopyManager {
         }
     }
 
+    /**
+     * 从预览区域的 DOM 生成内联样式的 HTML 字符串。
+     * 复制到公众号和发布到草稿箱共用此方法，确保两者输出完全一致。
+     *
+     * @param previewElement 预览区域的根 HTMLElement（包含 .mp-content-section）
+     * @param processImagesForClipboard 是否将图片转为 base64（复制时为 true，发布时为 false，由发布流程单独处理图片上传）
+     * @returns 内联样式后的 HTML 字符串
+     */
+    public static async getInlinedHtml(
+        previewElement: HTMLElement,
+        processImagesForClipboard: boolean = true,
+    ): Promise<string> {
+        const clone = previewElement.cloneNode(true) as HTMLElement;
+
+        if (processImagesForClipboard) {
+            await this.processImages(clone);
+        }
+
+        const contentSection = clone.querySelector('.mp-content-section');
+        if (!contentSection) {
+            throw new Error('找不到内容区域');
+        }
+
+        // 1. 提取 <style> 标签中的主题 CSS
+        const themeCSS = this.extractStyleCSS(contentSection as HTMLElement);
+
+        // 2. 移除 <style> 标签（后续由 juice 内联）
+        contentSection.querySelectorAll('style').forEach(tag => tag.remove());
+
+        // 3. 序列化为 HTML 字符串
+        const serializer = new XMLSerializer();
+        let rawHtml = serializer.serializeToString(contentSection);
+        rawHtml = rawHtml.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
+
+        // 4. 使用 juice 将 CSS 内联到每个元素的 style 属性
+        let inlinedHtml = await this.inlineCSS(rawHtml, themeCSS);
+
+        // 5. 清理多余属性（data-*、id、class）
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = inlinedHtml;
+        this.cleanupAttributes(tempContainer);
+
+        return tempContainer.innerHTML;
+    }
+
     public static async copyToClipboard(element: HTMLElement): Promise<void> {
         try {
+            const finalHtml = await this.getInlinedHtml(element, true);
+
             const clone = element.cloneNode(true) as HTMLElement;
-            await this.processImages(clone);
-
-            const contentSection = clone.querySelector('.mp-content-section');
-            if (!contentSection) {
-                throw new Error('找不到内容区域');
-            }
-
-            // 1. 提取 <style> 标签中的主题 CSS
-            const themeCSS = this.extractStyleCSS(contentSection as HTMLElement);
-
-            // 2. 移除 <style> 标签（后续由 juice 内联）
-            contentSection.querySelectorAll('style').forEach(tag => tag.remove());
-
-            // 3. 序列化为 HTML 字符串
-            const serializer = new XMLSerializer();
-            let rawHtml = serializer.serializeToString(contentSection);
-            rawHtml = rawHtml.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
-
-            // 4. 使用 juice 将 CSS 内联到每个元素的 style 属性
-            let inlinedHtml = await this.inlineCSS(rawHtml, themeCSS);
-
-            // 5. 清理多余属性（data-*、id、class）
-            const tempContainer = document.createElement('div');
-            tempContainer.innerHTML = inlinedHtml;
-            this.cleanupAttributes(tempContainer);
-            const finalHtml = tempContainer.innerHTML;
-
             const clipData = new ClipboardItem({
                 'text/html': new Blob([finalHtml], { type: 'text/html' }),
                 'text/plain': new Blob([clone.textContent || ''], { type: 'text/plain' })

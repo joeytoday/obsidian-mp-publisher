@@ -1,7 +1,8 @@
 import { App, MarkdownView, Modal, Notice, Setting, TFile } from 'obsidian';
 import MPPlugin from '../main';
-import { markdownToHtml } from '../converter';
+import { CopyManager } from '../copyManager';
 import { WechatPublisher } from '../publisher/wechat';
+import { MPView, VIEW_TYPE_MP } from '../view';
 
 // 封面图选择模态框
 export class CoverImageModal extends Modal {
@@ -496,14 +497,30 @@ export class PublishModal extends Modal {
 				return;
 			}
 
-			// 使用 markdownToHtml 渲染内容（通过 juice 内联 CSS，确保样式在公众号后台正确显示）
-			const content = this.markdownView.getViewData();
-			const htmlContent = await markdownToHtml(
-				this.app,
-				content,
-				this.markdownView.file?.path || '',
-				this.plugin.themeManager,
-			);
+			// 从预览区域的 DOM 获取内联样式的 HTML，与"复制到公众号"使用完全相同的逻辑，
+			// 确保发布到草稿箱的内容与复制粘贴的内容完全一致
+			const mpViewLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MP);
+			if (mpViewLeaves.length === 0) {
+				new Notice('请先打开公众号预览面板');
+				return;
+			}
+			const mpView = mpViewLeaves[0].view as MPView;
+			const previewElement = mpView.getPreviewElement();
+			if (!previewElement || !previewElement.querySelector('.mp-content-section')) {
+				new Notice('预览内容为空，请先在预览面板中查看文章');
+				return;
+			}
+
+			// 使用 CopyManager.getInlinedHtml 生成与复制完全一致的 HTML
+			// processImagesForClipboard=false：不将图片转 base64，由发布流程单独处理图片上传
+			let htmlContent: string;
+			try {
+				htmlContent = await CopyManager.getInlinedHtml(previewElement, false);
+			} catch (error) {
+				console.error('生成发布内容失败:', error);
+				new Notice('生成发布内容失败：' + (error instanceof Error ? error.message : '未知错误'));
+				return;
+			}
 
 			if (platform === 'wechat') {
 				if (!this.plugin.settings.wechatAppId || !this.plugin.settings.wechatAppSecret) {

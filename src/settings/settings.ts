@@ -1,4 +1,5 @@
 import { CSSTheme, FontOption, DEFAULT_FONTS, RemoteThemeIndex } from '../types/css-theme';
+import type { DocumentMetadata } from '../types/metadata';
 
 export interface MPSettings {
     // 主题设置
@@ -12,8 +13,9 @@ export interface MPSettings {
     // 微信公众号相关设置
     wechatAppId: string;
     wechatAppSecret: string;
-    imageAttachmentLocation: string;
     debugMode: boolean;
+    // 文档发布元数据（图片缓存、草稿 ID 等），以文件路径为 key
+    documentMetadata: Record<string, DocumentMetadata>;
 }
 
 const DEFAULT_SETTINGS: MPSettings = {
@@ -26,8 +28,9 @@ const DEFAULT_SETTINGS: MPSettings = {
     // 微信公众号默认设置
     wechatAppId: '',
     wechatAppSecret: '',
-    imageAttachmentLocation: '${filename}__assets',
     debugMode: false,
+    // 文档发布元数据
+    documentMetadata: {},
 };
 
 export class SettingsManager {

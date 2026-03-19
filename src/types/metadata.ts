@@ -1,5 +1,5 @@
 
-import { TFile, TFolder, Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 
 // 图片元数据接口
 export interface ImageMetadata {
@@ -27,69 +27,42 @@ export interface DocumentMetadata {
     draft?: DraftMetadata;
 }
 
-// 获取或创建文档的元数据文件
-export async function getOrCreateMetadata(
-    vault: Vault,
+/**
+ * 获取文档的元数据（从插件 data.json 中读取，不再生成文件系统上的文件夹和文件）
+ * @param plugin 插件实例（需要有 settingsManager）
+ * @param file 当前文档文件
+ */
+export function getOrCreateMetadata(
+    plugin: { settingsManager: { getSettings(): any } },
     file: TFile,
-    assetFolderPath: string
-): Promise<DocumentMetadata> {
-    if (!file.parent) {
-        throw new Error('文件必须在文件夹中');
+): DocumentMetadata {
+    const settings = plugin.settingsManager.getSettings();
+    const allMetadata = settings.documentMetadata || {};
+    const filePath = file.path;
+
+    if (allMetadata[filePath]) {
+        return allMetadata[filePath];
     }
 
-    // 获取文档对应的资源文件夹
-    const assetsFolder = assetFolderPath;
-    const metadataPath = `${assetFolderPath}/metadata.json`;
-
-    try {
-        // 检查元数据文件是否存在
-        const metadataFile = vault.getAbstractFileByPath(metadataPath);
-        if (metadataFile instanceof TFile) {
-            // 读取现有元数据
-            const content = await vault.read(metadataFile);
-            try {
-                return JSON.parse(content);
-            } catch (e) {
-                console.warn(`[MP Preview] Metadata file corrupted: ${metadataPath}`, e);
-                // 备份损坏的文件
-                const backupPath = `${metadataPath}.corrupt.${Date.now()}`;
-                await vault.rename(metadataFile, backupPath);
-                // 将被视为文件不存在，并在下方创建新的
-            }
-        }
-
-        // 如果元数据文件不存在，创建新的元数据对象
-        const newMetadata: DocumentMetadata = {
-            images: {}
-        };
-
-        // 确保资源文件夹存在
-        if (!vault.getAbstractFileByPath(assetsFolder)) {
-            await vault.createFolder(assetsFolder);
-        }
-
-        // 创建元数据文件
-        await vault.create(metadataPath, JSON.stringify(newMetadata, null, 2));
-
-        return newMetadata;
-    } catch (error) {
-        console.error('处理元数据文件时出错:', error);
-        throw error;
-    }
+    // 返回新的空元数据对象
+    return { images: {} };
 }
 
-// 更新文档的元数据
+/**
+ * 更新文档的元数据（保存到插件 data.json 中）
+ * @param plugin 插件实例
+ * @param file 当前文档文件
+ * @param metadata 要保存的元数据
+ */
 export async function updateMetadata(
-    vault: Vault,
+    plugin: { settingsManager: { getSettings(): any; updateSettings(updates: any): Promise<void> } },
     file: TFile,
     metadata: DocumentMetadata,
-    assetFolderPath: string
 ): Promise<void> {
-    if (!file.parent) {
-        throw new Error('文件必须在文件夹中');
-    }
-    const metadataPath = `${assetFolderPath}/metadata.json`;
-    await vault.adapter.write(metadataPath, JSON.stringify(metadata, null, 2));
+    const settings = plugin.settingsManager.getSettings();
+    const allMetadata = settings.documentMetadata || {};
+    allMetadata[file.path] = metadata;
+    await plugin.settingsManager.updateSettings({ documentMetadata: allMetadata });
 }
 
 // 检查图片是否已上传

@@ -25,8 +25,31 @@ export class MPConverter {
 
     private static processElements(container: HTMLElement | null): void {
         if (!container) return;
-        // 处理列表项内部元素，用 inline 的 span 包裹（避免 section 块级元素导致额外空行）
+        // 处理列表项内部元素：
+        // 1. 先将 <li> 内所有 <p> 替换为 <span>，并移除 margin 样式（避免微信后台将块级 <p> 解析为独立段落导致额外空行）
+        // 2. 再用 inline 的 <span> 包裹 <li> 子节点（避免 section 块级元素导致额外空行）
         container.querySelectorAll('li').forEach(li => {
+            li.querySelectorAll('p').forEach(paragraph => {
+                const span = document.createElement('span');
+                span.innerHTML = paragraph.innerHTML;
+                // 保留 p 标签上的 style 属性，但移除 margin 相关样式
+                const style = paragraph.getAttribute('style');
+                if (style) {
+                    // 移除 margin 和 margin-* 属性
+                    const filteredStyle = style
+                        .split(';')
+                        .filter(prop => {
+                            const propName = prop.split(':')[0].trim().toLowerCase();
+                            return !propName.startsWith('margin');
+                        })
+                        .join(';');
+                    if (filteredStyle.trim()) {
+                        span.setAttribute('style', filteredStyle);
+                    }
+                }
+                paragraph.parentNode?.replaceChild(span, paragraph);
+            });
+
             const wrapper = document.createElement('span');
             while (li.firstChild) {
                 wrapper.appendChild(li.firstChild);
