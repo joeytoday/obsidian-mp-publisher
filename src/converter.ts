@@ -173,7 +173,6 @@ export class MPConverter {
         // 从下往上遍历，避免删除元素影响后续索引
         const allLis = Array.from(container.querySelectorAll('li'));
         
-        console.log('[cleanEmptyListItems] 开始清理，原始 li 数量:', allLis.length);
         
         for (let i = allLis.length - 1; i >= 0; i--) {
             const li = allLis[i];
@@ -191,16 +190,13 @@ export class MPConverter {
                 const innerHTML = li.innerHTML.trim();
                 // 移除所有 HTML 标签后检查
                 const contentOnly = innerHTML.replace(/<[^>]*>/g, '').trim();
-                console.log('[cleanEmptyListItems] 检查空 li - innerHTML:', innerHTML, 'contentOnly:', contentOnly, 'hasOnlyBreak:', hasOnlyBreak);
                 if (contentOnly === '' || hasOnlyBreak) {
-                    console.log('[cleanEmptyListItems] 移除空 li');
                     li.remove();
                 }
             }
         }
         
         const remainingLis = container.querySelectorAll('li').length;
-        console.log('[cleanEmptyListItems] 清理后 li 数量:', remainingLis);
     }
 
     /** Callout 类型到颜色的映射 */
