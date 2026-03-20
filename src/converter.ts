@@ -25,39 +25,11 @@ export class MPConverter {
 
     private static processElements(container: HTMLElement | null): void {
         if (!container) return;
-        // 处理列表项内部元素：
-        // 1. 先将 <li> 内所有 <p> 替换为 <span>，并移除 margin 样式（避免微信后台将块级 <p> 解析为独立段落导致额外空行）
-        // 2. 再用 inline 的 <span> 包裹 <li> 子节点（避免 section 块级元素导致额外空行）
-        container.querySelectorAll('li').forEach(li => {
-            li.querySelectorAll('p').forEach(paragraph => {
-                const span = document.createElement('span');
-                span.innerHTML = paragraph.innerHTML;
-                // 保留 p 标签上的 style 属性，但移除 margin 相关样式
-                const style = paragraph.getAttribute('style');
-                if (style) {
-                    // 移除 margin 和 margin-* 属性
-                    const filteredStyle = style
-                        .split(';')
-                        .filter(prop => {
-                            const propName = prop.split(':')[0].trim().toLowerCase();
-                            return !propName.startsWith('margin');
-                        })
-                        .join(';');
-                    if (filteredStyle.trim()) {
-                        span.setAttribute('style', filteredStyle);
-                    }
-                }
-                paragraph.parentNode?.replaceChild(span, paragraph);
-            });
 
-            const wrapper = document.createElement('span');
-            while (li.firstChild) {
-                wrapper.appendChild(li.firstChild);
-            }
-            li.appendChild(wrapper);
-        });
+        // 1. 先处理列表（核心逻辑）
+        this.processLists(container);
 
-        // 处理代码块
+        // 2. 处理代码块
         container.querySelectorAll('pre').forEach(pre => {
             // 过滤掉 frontmatter
             if (pre.classList.contains('frontmatter')) {
@@ -87,10 +59,10 @@ export class MPConverter {
             }
         });
 
-        // 处理 callout（Obsidian 的提示框）
+        // 3. 处理 callout（Obsidian 的提示框）
         this.processCallouts(container);
 
-        // 处理图片
+        // 4. 处理图片
         container.querySelectorAll('span.internal-embed[alt][src]').forEach(async el => {
             const originalSpan = el as HTMLElement;
             const src = originalSpan.getAttribute('src');
@@ -113,6 +85,123 @@ export class MPConverter {
             }
         });
     }
+
+    /**
+     * 统一处理所有列表相关逻辑
+     */
+    private static processLists(container: HTMLElement): void {
+        // 1. 清理空的列表项
+        this.cleanEmptyListItems(container);
+
+        // 2. 清理列表前后的空段落
+        this.cleanEmptyParagraphsAroundLists(container);
+
+        // 3. 给列表添加内联样式（margin: 0）
+        container.querySelectorAll('ul, ol').forEach(list => {
+            const el = list as HTMLElement;
+            const currentStyle = el.getAttribute('style') || '';
+            if (!currentStyle.includes('margin')) {
+                el.setAttribute('style', currentStyle + 'margin: 0;');
+            }
+        });
+
+        // 4. 清理所有 <li> 的 margin，避免微信公众号后台产生额外空行
+        container.querySelectorAll('li').forEach(li => {
+            const el = li as HTMLElement;
+            const currentStyle = el.getAttribute('style') || '';
+            if (currentStyle) {
+                // 移除 margin 相关属性
+                const newStyle = currentStyle
+                    .split(';')
+                    .filter(prop => {
+                        const propName = prop.split(':')[0].trim().toLowerCase();
+                        return !propName.startsWith('margin');
+                    })
+                    .join(';');
+                el.setAttribute('style', newStyle);
+            }
+        });
+    }
+
+    /**
+     * 清理列表前后的无效空行（空的 <p> 标签）
+     */
+    private static cleanEmptyParagraphsAroundLists(container: HTMLElement): void {
+        const isEmptyElement = (el: Element | null): boolean => {
+            if (!el) return false;
+            const tagName = el.tagName.toLowerCase();
+            
+            // 只检查 <p> 标签
+            if (tagName !== 'p') return false;
+            
+            const text = el.textContent?.trim() || '';
+            if (text !== '') return false;
+            
+            // 检查是否有非文本内容
+            const hasNonTextContent = el.querySelector('img, video, iframe, audio');
+            return !hasNonTextContent;
+        };
+
+        // 收集需要移除的元素
+        const toRemove: Element[] = [];
+
+        container.querySelectorAll('ul, ol').forEach(list => {
+            // 检查列表前的空元素
+            let prev = list.previousElementSibling;
+            while (prev && isEmptyElement(prev)) {
+                toRemove.push(prev);
+                prev = prev.previousElementSibling;
+            }
+
+            // 检查列表后的空元素
+            let next = list.nextElementSibling;
+            while (next && isEmptyElement(next)) {
+                toRemove.push(next);
+                next = next.nextElementSibling;
+            }
+        });
+
+        // 移除重复元素并删除
+        [...new Set(toRemove)].forEach(el => el.remove());
+    }
+
+    /**
+     * 清理空的列表项
+     */
+    private static cleanEmptyListItems(container: HTMLElement): void {
+        // 从下往上遍历，避免删除元素影响后续索引
+        const allLis = Array.from(container.querySelectorAll('li'));
+        
+        console.log('[cleanEmptyListItems] 开始清理，原始 li 数量:', allLis.length);
+        
+        for (let i = allLis.length - 1; i >= 0; i--) {
+            const li = allLis[i];
+            
+            // 获取纯文本内容
+            const text = li.textContent?.trim() || '';
+            
+            // 检查是否只包含 ProseMirror 的 trailingBreak 或空白
+            const hasOnlyBreak = li.querySelector(':scope > *') !== null && 
+                                 text === '' &&
+                                 li.innerHTML.trim().includes('ProseMirror-trailingBreak');
+            
+            // 如果文本为空，检查是否只包含空白标签
+            if (text === '' || hasOnlyBreak) {
+                const innerHTML = li.innerHTML.trim();
+                // 移除所有 HTML 标签后检查
+                const contentOnly = innerHTML.replace(/<[^>]*>/g, '').trim();
+                console.log('[cleanEmptyListItems] 检查空 li - innerHTML:', innerHTML, 'contentOnly:', contentOnly, 'hasOnlyBreak:', hasOnlyBreak);
+                if (contentOnly === '' || hasOnlyBreak) {
+                    console.log('[cleanEmptyListItems] 移除空 li');
+                    li.remove();
+                }
+            }
+        }
+        
+        const remainingLis = container.querySelectorAll('li').length;
+        console.log('[cleanEmptyListItems] 清理后 li 数量:', remainingLis);
+    }
+
     /** Callout 类型到颜色的映射 */
     private static readonly CALLOUT_COLORS: Record<string, { bg: string; border: string; title: string; icon: string }> = {
         note:      { bg: '#e8f0fe', border: '#448aff', title: '#448aff', icon: '📝' },
