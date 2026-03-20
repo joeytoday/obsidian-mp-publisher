@@ -519,6 +519,9 @@ export class MPView extends ItemView {
                     while (tempDiv.firstChild) {
                         this.previewEl.appendChild(tempDiv.firstChild);
                     }
+
+                    // 重新应用 formatContent 创建 section 容器
+                    MPConverter.formatContent(this.previewEl);
                 }
             } catch (mathError) {
                 console.error('预览数学公式处理失败:', mathError);
