@@ -89,114 +89,102 @@ export class MPConverter {
 
     /**
      * 统一处理所有列表相关逻辑
+     * 将列表转换为 section + p 结构，避免微信自动处理列表元素
      */
     private static processLists(container: HTMLElement): void {
-        // 1. 清理空的列表项
-        this.cleanEmptyListItems(container);
-
-        // 2. 清理列表前后的空段落
-        this.cleanEmptyParagraphsAroundLists(container);
-
-        // 3. 给列表添加内联样式（margin: 0）
-        container.querySelectorAll('ul, ol').forEach(list => {
-            const el = list as HTMLElement;
-            const currentStyle = el.getAttribute('style') || '';
-            if (!currentStyle.includes('margin')) {
-                el.setAttribute('style', currentStyle + 'margin: 0;');
-            }
-        });
-
-        // 4. 清理所有 <li> 的 margin，避免微信公众号后台产生额外空行
-        container.querySelectorAll('li').forEach(li => {
-            const el = li as HTMLElement;
-            const currentStyle = el.getAttribute('style') || '';
-            if (currentStyle) {
-                // 移除 margin 相关属性
-                const newStyle = currentStyle
-                    .split(';')
-                    .filter(prop => {
-                        const propName = prop.split(':')[0].trim().toLowerCase();
-                        return !propName.startsWith('margin');
-                    })
-                    .join(';');
-                el.setAttribute('style', newStyle);
-            }
-        });
+        // 递归处理所有列表（从最内层开始）
+        this.convertListsToSection(container);
     }
 
     /**
-     * 清理列表前后的无效空行（空的 <p> 标签）
+     * 将列表元素转换为 section + p 结构
      */
-    private static cleanEmptyParagraphsAroundLists(container: HTMLElement): void {
-        const isEmptyElement = (el: Element | null): boolean => {
-            if (!el) return false;
-            const tagName = el.tagName.toLowerCase();
-            
-            // 只检查 <p> 标签
-            if (tagName !== 'p') return false;
-            
-            const text = el.textContent?.trim() || '';
-            if (text !== '') return false;
-            
-            // 检查是否有非文本内容
-            const hasNonTextContent = el.querySelector('img, video, iframe, audio');
-            return !hasNonTextContent;
-        };
+    private static convertListsToSection(container: HTMLElement): void {
+        // 持续处理，直到没有列表元素
+        while (container.querySelector('ul, ol')) {
+            // 找到所有顶层列表（不在其他列表内的）
+            const topLevelLists = Array.from(container.querySelectorAll('ul, ol')).filter(list => {
+                return !list.closest('ul, ol') || list.closest('ul, ol') === list;
+            });
 
-        // 收集需要移除的元素
-        const toRemove: Element[] = [];
-
-        container.querySelectorAll('ul, ol').forEach(list => {
-            // 检查列表前的空元素
-            let prev = list.previousElementSibling;
-            while (prev && isEmptyElement(prev)) {
-                toRemove.push(prev);
-                prev = prev.previousElementSibling;
-            }
-
-            // 检查列表后的空元素
-            let next = list.nextElementSibling;
-            while (next && isEmptyElement(next)) {
-                toRemove.push(next);
-                next = next.nextElementSibling;
-            }
-        });
-
-        // 移除重复元素并删除
-        [...new Set(toRemove)].forEach(el => el.remove());
-    }
-
-    /**
-     * 清理空的列表项
-     */
-    private static cleanEmptyListItems(container: HTMLElement): void {
-        // 从下往上遍历，避免删除元素影响后续索引
-        const allLis = Array.from(container.querySelectorAll('li'));
-        
-        
-        for (let i = allLis.length - 1; i >= 0; i--) {
-            const li = allLis[i];
-            
-            // 获取纯文本内容
-            const text = li.textContent?.trim() || '';
-            
-            // 检查是否只包含 ProseMirror 的 trailingBreak 或空白
-            const hasOnlyBreak = li.querySelector(':scope > *') !== null && 
-                                 text === '' &&
-                                 li.innerHTML.trim().includes('ProseMirror-trailingBreak');
-            
-            // 如果文本为空，检查是否只包含空白标签
-            if (text === '' || hasOnlyBreak) {
-                const innerHTML = li.innerHTML.trim();
-                // 移除所有 HTML 标签后检查
-                const contentOnly = innerHTML.replace(/<[^>]*>/g, '').trim();
-                if (contentOnly === '' || hasOnlyBreak) {
-                    li.remove();
-                }
+            for (const list of topLevelLists) {
+                this.convertSingleList(list as HTMLElement);
             }
         }
+    }
+
+    /**
+     * 转换单个列表元素
+     */
+    private static convertSingleList(listElement: HTMLElement): void {
+        const isOrdered = listElement.tagName.toLowerCase() === 'ol';
+        const listItems = Array.from(listElement.querySelectorAll(':scope > li'));
         
-        const remainingLis = container.querySelectorAll('li').length;
+        // 创建 section 容器
+        const section = document.createElement('section');
+        section.className = 'mp-list-section';
+        section.setAttribute('data-list-type', isOrdered ? 'ordered' : 'unordered');
+        
+        // 计算基础缩进（通过父级列表数量）
+        let indentLevel = 0;
+        let parent = listElement.parentElement;
+        while (parent) {
+            if (parent.classList.contains('mp-list-section')) {
+                indentLevel++;
+            }
+            parent = parent.parentElement;
+        }
+        
+        const basePaddingLeft = 2 + indentLevel * 2; // em
+
+        let itemNumber = 1;
+        for (const li of listItems) {
+            const liElement = li as HTMLElement;
+            
+            // 检查是否有嵌套列表
+            const nestedList = liElement.querySelector(':scope > ul, :scope > ol');
+            const nestedListClone = nestedList ? nestedList.cloneNode(true) as HTMLElement : null;
+            
+            // 移除嵌套列表，获取纯文本内容
+            if (nestedList) {
+                nestedList.remove();
+            }
+            
+            // 创建段落
+            const p = document.createElement('p');
+            p.className = 'mp-list-item';
+            p.style.cssText = `margin: 0.5em 0; padding-left: ${basePaddingLeft}em; line-height: 1.8;`;
+            
+            // 添加编号或符号
+            const marker = isOrdered ? `${itemNumber}. ` : '• ';
+            const markerSpan = document.createElement('span');
+            markerSpan.textContent = marker;
+            markerSpan.style.cssText = 'margin-right: 0.25em;';
+            p.appendChild(markerSpan);
+            
+            // 添加内容
+            const contentSpan = document.createElement('span');
+            contentSpan.innerHTML = liElement.innerHTML;
+            p.appendChild(contentSpan);
+            
+            section.appendChild(p);
+            
+            // 如果有嵌套列表，递归处理
+            if (nestedListClone) {
+                const nestedSection = document.createElement('div');
+                nestedSection.appendChild(nestedListClone);
+                this.convertSingleList(nestedListClone);
+                // 将转换后的内容添加到 section
+                while (nestedSection.firstChild) {
+                    section.appendChild(nestedSection.firstChild);
+                }
+            }
+            
+            itemNumber++;
+        }
+        
+        // 替换原列表
+        listElement.replaceWith(section);
     }
 
     /** Callout 类型到颜色的映射 */

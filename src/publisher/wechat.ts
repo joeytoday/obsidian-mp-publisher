@@ -327,122 +327,19 @@ export class WechatPublisher {
 
     /**
      * 统一处理所有列表相关逻辑
+     * 列表已在 converter.ts 中转换为 section + p 结构
+     * 这里只处理 mp-list-section 的样式调整
      */
     private processLists(container: HTMLElement): void {
-        // 1. 清理空的列表项
-        this.cleanEmptyListItems(container);
-
-        // 2. 清理列表前后的空段落
-        this.cleanEmptyParagraphsAroundLists(container);
-
-        // 3. 给列表添加内联样式（margin: 0）
-        container.querySelectorAll('ul, ol').forEach(list => {
-            const el = list as HTMLElement;
-            const currentStyle = el.getAttribute('style') || '';
-            if (!currentStyle.includes('margin')) {
-                el.setAttribute('style', currentStyle + 'margin: 0;');
-            }
-        });
-
-        // 4. 清理所有 <li> 的 margin，避免微信公众号后台产生额外空行
-        container.querySelectorAll('li').forEach(li => {
-            const el = li as HTMLElement;
-            const currentStyle = el.getAttribute('style') || '';
-            if (currentStyle) {
-                // 移除 margin 相关属性
-                const newStyle = currentStyle
-                    .split(';')
-                    .filter(prop => {
-                        const propName = prop.split(':')[0].trim().toLowerCase();
-                        return !propName.startsWith('margin');
-                    })
-                    .join(';');
-                el.setAttribute('style', newStyle);
+        // 处理已转换的列表项样式
+        container.querySelectorAll('.mp-list-item').forEach(item => {
+            const el = item as HTMLElement;
+            // 确保样式正确
+            if (!el.style.paddingLeft) {
+                el.style.paddingLeft = '2em';
             }
         });
     }
-
-    /**
-     * 清理列表前后的无效空行（空的 <p> 标签）
-     */
-    private cleanEmptyParagraphsAroundLists(container: HTMLElement): void {
-        const isEmptyElement = (el: Element | null): boolean => {
-            if (!el) return false;
-            const tagName = el.tagName.toLowerCase();
-            
-            // 只检查 <p> 标签
-            if (tagName !== 'p') return false;
-            
-            const text = el.textContent?.trim() || '';
-            if (text !== '') return false;
-            
-            // 检查是否有非文本内容
-            const hasNonTextContent = el.querySelector('img, video, iframe, audio');
-            return !hasNonTextContent;
-        };
-
-        // 收集需要移除的元素
-        const toRemove: Element[] = [];
-
-        container.querySelectorAll('ul, ol').forEach(list => {
-            // 检查列表前的空元素
-            let prev = list.previousElementSibling;
-            while (prev && isEmptyElement(prev)) {
-                toRemove.push(prev);
-                prev = prev.previousElementSibling;
-            }
-
-            // 检查列表后的空元素
-            let next = list.nextElementSibling;
-            while (next && isEmptyElement(next)) {
-                toRemove.push(next);
-                next = next.nextElementSibling;
-            }
-        });
-
-        // 移除重复元素并删除
-        [...new Set(toRemove)].forEach(el => el.remove());
-    }
-
-    /**
-     * 清理空的列表项
-     */
-    private cleanEmptyListItems(container: HTMLElement): void {
-        // 从下往上遍历，避免删除元素影响后续索引
-        const allLis = Array.from(container.querySelectorAll('li'));
-        
-        this.logger.debug('[cleanEmptyListItems] 开始清理，原始 li 数量:', allLis.length);
-        
-        for (let i = allLis.length - 1; i >= 0; i--) {
-            const li = allLis[i];
-            
-            // 获取纯文本内容
-            const text = li.textContent?.trim() || '';
-            
-            // 检查是否只包含 ProseMirror 的 trailingBreak 或空白
-            const hasOnlyBreak = li.querySelector(':scope > *') !== null && 
-                                 text === '' &&
-                                 li.innerHTML.trim().includes('ProseMirror-trailingBreak');
-            
-            // 如果文本为空，检查是否只包含空白标签
-            if (text === '' || hasOnlyBreak) {
-                const innerHTML = li.innerHTML.trim();
-                // 移除所有 HTML 标签后检查
-                const contentOnly = innerHTML.replace(/<[^>]*>/g, '').trim();
-                this.logger.debug('[cleanEmptyListItems] 检查空 li - innerHTML:', innerHTML, 'contentOnly:', contentOnly, 'hasOnlyBreak:', hasOnlyBreak);
-                if (contentOnly === '' || hasOnlyBreak) {
-                    this.logger.debug('[cleanEmptyListItems] 移除空 li');
-                    li.remove();
-                }
-            } else {
-                this.logger.debug('[cleanEmptyListItems] 保留 li - text:', text.substring(0, 30));
-            }
-        }
-        
-        const remainingLis = container.querySelectorAll('li').length;
-        this.logger.debug('[cleanEmptyListItems] 清理后 li 数量:', remainingLis);
-    }
-
     // 处理单个图片的辅助函数
     async processImage(
         imagePath: string,
