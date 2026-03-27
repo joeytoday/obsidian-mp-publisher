@@ -1,15 +1,7 @@
-import { CSSTheme, FontOption, DEFAULT_FONTS, RemoteThemeIndex } from '../types/css-theme';
+import { FontOption, DEFAULT_FONTS, ThemeSettings } from '../types/css-theme';
 import type { DocumentMetadata } from '../types/metadata';
 
-export interface MPSettings {
-    // 主题设置
-    activeThemeId: string;
-    fontFamily: string;
-    fontSize: number;
-    customFonts: FontOption[];
-    downloadedRemoteThemes: CSSTheme[];
-    remoteThemeIndexCache?: RemoteThemeIndex[];
-    remoteIndexLastUpdate?: number;
+export interface MPSettings extends ThemeSettings {
     // 微信公众号相关设置
     wechatAppId: string;
     wechatAppSecret: string;

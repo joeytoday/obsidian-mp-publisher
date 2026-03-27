@@ -24,7 +24,7 @@ export default class MPPublisherPlugin extends Plugin {
 
   async onload() {
     // 初始化日志工具
-    this.logger = Logger.getInstance(this.app);
+    this.logger = Logger.getInstance();
     this.logger.info('加载 MP Publisher 插件');
 
     // 初始化设置管理器
@@ -103,40 +103,39 @@ export default class MPPublisherPlugin extends Plugin {
     this.logger.info('MP Publisher 插件加载完成');
   }
 
-  async activateView() {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MP);
-    if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+  private async openOrCreateView(
+    viewType: string,
+    getLeaf: () => import('obsidian').WorkspaceLeaf | null,
+    errorMessage: string,
+  ) {
+    const existingLeaves = this.app.workspace.getLeavesOfType(viewType);
+    if (existingLeaves.length > 0) {
+      this.app.workspace.revealLeaf(existingLeaves[0]);
       return;
     }
 
-    const rightLeaf = this.app.workspace.getRightLeaf(false);
-    if (rightLeaf) {
-      await rightLeaf.setViewState({
-        type: VIEW_TYPE_MP,
-        active: true,
-      });
+    const leaf = getLeaf();
+    if (leaf) {
+      await leaf.setViewState({ type: viewType, active: true });
     } else {
-      new Notice('无法创建视图面板');
+      new Notice(errorMessage);
     }
   }
 
-  async activateThemeManager() {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_THEME_MANAGER);
-    if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
-      return;
-    }
+  async activateView() {
+    await this.openOrCreateView(
+      VIEW_TYPE_MP,
+      () => this.app.workspace.getRightLeaf(false),
+      '无法创建视图面板',
+    );
+  }
 
-    const leaf = this.app.workspace.getLeaf(true);
-    if (leaf) {
-      await leaf.setViewState({
-        type: VIEW_TYPE_THEME_MANAGER,
-        active: true,
-      });
-    } else {
-      new Notice('无法创建主题管理面板');
-    }
+  async activateThemeManager() {
+    await this.openOrCreateView(
+      VIEW_TYPE_THEME_MANAGER,
+      () => this.app.workspace.getLeaf(true),
+      '无法创建主题管理面板',
+    );
   }
 
   // 包装微信发布功能供UI调用

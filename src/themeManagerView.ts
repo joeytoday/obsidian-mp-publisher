@@ -61,18 +61,33 @@ export class ThemeManagerView extends ItemView {
         this.renderFontSection();
     }
 
+    // ==================== 通用主题网格渲染 ====================
+
+    /**
+     * 在指定容器中渲染主题卡片网格
+     */
+    private renderThemeGrid(
+        container: HTMLElement,
+        themes: CSSTheme[],
+        canDelete: boolean,
+        emptyMessage?: string,
+    ): void {
+        const grid = container.createEl('div', { cls: 'mp-tm-theme-grid' });
+        if (themes.length === 0 && emptyMessage) {
+            grid.createEl('div', { text: emptyMessage, cls: 'mp-tm-empty' });
+        } else {
+            for (const theme of themes) {
+                this.renderThemeCard(grid, theme, canDelete);
+            }
+        }
+    }
+
     // ==================== 内置主题 ====================
 
     private renderBuiltinSection(): void {
         const section = this.contentEl.createEl('div', { cls: 'mp-tm-section' });
         section.createEl('h3', { text: '📦 内置主题' });
-
-        const builtinThemes = this.themeManager.getThemesBySource(ThemeSource.BUILTIN);
-        const grid = section.createEl('div', { cls: 'mp-tm-theme-grid' });
-
-        for (const theme of builtinThemes) {
-            this.renderThemeCard(grid, theme, false);
-        }
+        this.renderThemeGrid(section, this.themeManager.getThemesBySource(ThemeSource.BUILTIN), false);
     }
 
     // ==================== 云端主题 ====================
@@ -92,10 +107,7 @@ export class ThemeManagerView extends ItemView {
         if (downloadedThemes.length > 0) {
             const downloadedSection = section.createEl('div', { cls: 'mp-tm-subsection' });
             downloadedSection.createEl('h4', { text: '已下载' });
-            const grid = downloadedSection.createEl('div', { cls: 'mp-tm-theme-grid' });
-            for (const theme of downloadedThemes) {
-                this.renderThemeCard(grid, theme, true);
-            }
+            this.renderThemeGrid(downloadedSection, downloadedThemes, true);
         }
 
         // 可下载的云端主题
@@ -198,18 +210,12 @@ export class ThemeManagerView extends ItemView {
 
         // 已有的本地主题
         const localThemes = this.themeManager.getThemesBySource(ThemeSource.LOCAL);
-        const grid = section.createEl('div', { cls: 'mp-tm-theme-grid' });
-
-        if (localThemes.length === 0) {
-            grid.createEl('div', {
-                text: '暂无本地自定义主题。点击「新建主题」创建，或将 .css 文件放入插件目录的 custom/ 文件夹中。',
-                cls: 'mp-tm-empty',
-            });
-        } else {
-            for (const theme of localThemes) {
-                this.renderThemeCard(grid, theme, true);
-            }
-        }
+        this.renderThemeGrid(
+            section,
+            localThemes,
+            true,
+            '暂无本地自定义主题。点击「新建主题」创建，或将 .css 文件放入插件目录的 custom/ 文件夹中。',
+        );
 
         // CSS 编辑区域（新建主题时显示）
         const editorSection = section.createEl('div', { cls: 'mp-tm-editor-section mp-tm-hidden' });

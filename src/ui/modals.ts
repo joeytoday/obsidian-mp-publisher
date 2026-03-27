@@ -3,6 +3,29 @@ import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
 import { WechatPublisher } from '../publisher/wechat';
 
+/** 保存选中的素材信息到 sessionStorage */
+function saveSelectedMaterial(material: { media_id: string; url?: string; name?: string; isLocal?: boolean }): void {
+	sessionStorage.setItem('selected_material', JSON.stringify(material));
+}
+
+/** 获取选中的素材信息 */
+function getSelectedMaterial(): { media_id: string; url?: string; name?: string } | null {
+	const data = sessionStorage.getItem('selected_material');
+	return data ? JSON.parse(data) : null;
+}
+
+/** 设置按钮为加载状态 */
+function setButtonLoading(button: HTMLButtonElement, loadingText: string): void {
+	button.disabled = true;
+	button.textContent = loadingText;
+}
+
+/** 重置按钮状态 */
+function resetButton(button: HTMLButtonElement, originalText: string): void {
+	button.disabled = false;
+	button.textContent = originalText;
+}
+
 // 封面图选择模态框
 export class CoverImageModal extends Modal {
 	plugin: MPPlugin;
@@ -165,11 +188,11 @@ export class CoverImageModal extends Modal {
 						this.selectedMediaId = material.media_id;
 
 						// 存储当前选中的素材信息
-						sessionStorage.setItem('selected_material', JSON.stringify({
+						saveSelectedMaterial({
 							media_id: material.media_id,
 							url: material.url,
 							name: material.name
-						}));
+						});
 
 						// 启用素材库确认按钮
 						materialConfirmButton.disabled = false;
@@ -268,12 +291,11 @@ export class CoverImageModal extends Modal {
 
 		// 素材库确认按钮事件
 		materialConfirmButton.addEventListener('click', () => {
-			const selectedMaterial = sessionStorage.getItem('selected_material');
-			if (!selectedMaterial) {
+			const material = getSelectedMaterial();
+			if (!material) {
 				new Notice('请先选择图片');
 				return;
 			}
-			const material = JSON.parse(selectedMaterial);
 			this.onImageSelected(material.media_id);
 			this.close();
 		});
@@ -291,8 +313,7 @@ export class CoverImageModal extends Modal {
 			const fileInfo = JSON.parse(selectedFileInfo);
 
 			// 立即上传图片到微信获取 media_id
-			localConfirmButton.disabled = true;
-			localConfirmButton.textContent = '正在上传...';
+			setButtonLoading(localConfirmButton, '正在上传...');
 
 			try {
 				const mediaId = await this.plugin.wechatPublisher.uploadImageToWechat(
@@ -302,18 +323,16 @@ export class CoverImageModal extends Modal {
 
 				if (!mediaId) {
 					new Notice('上传封面图失败，请重试');
-					localConfirmButton.disabled = false;
-					localConfirmButton.textContent = '确认';
+					resetButton(localConfirmButton, '确认');
 					return;
 				}
 
-				// 保存上传成功的图片信息
-				sessionStorage.setItem('selected_material', JSON.stringify({
+				saveSelectedMaterial({
 					media_id: mediaId,
 					url: previewImageUrl,
 					name: fileInfo.name,
-					isLocal: false  // 已经上传到微信，不再是本地图片
-				}));
+					isLocal: false,
+				});
 
 				this.onImageSelected(mediaId);
 				new Notice('封面图上传成功');
@@ -321,8 +340,7 @@ export class CoverImageModal extends Modal {
 			} catch (error) {
 				console.error('上传封面图失败:', error);
 				new Notice('上传封面图失败：' + (error.message || '未知错误'));
-				localConfirmButton.disabled = false;
-				localConfirmButton.textContent = '确认';
+				resetButton(localConfirmButton, '确认');
 			}
 		});
 
@@ -444,16 +462,10 @@ export class PublishModal extends Modal {
 				const img = document.createElement('img') as HTMLImageElement;
 				img.className = 'preview-image';
 
-				// 从sessionStorage获取选中的素材信息
-				const selectedMaterial = sessionStorage.getItem('selected_material');
-				if (selectedMaterial) {
-					const material = JSON.parse(selectedMaterial);
-					if (material.url) {
-						img.src = material.url;
-						this.coverImagePreview.appendChild(img);
-					} else {
-						this.coverImagePreview.textContent = '已选择封面图';
-					}
+				const material = getSelectedMaterial();
+				if (material?.url) {
+					img.src = material.url;
+					this.coverImagePreview.appendChild(img);
 				} else {
 					this.coverImagePreview.textContent = '已选择封面图';
 				}

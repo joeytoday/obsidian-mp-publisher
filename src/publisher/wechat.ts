@@ -32,7 +32,7 @@ export class WechatPublisher {
     constructor(app: App, plugin: MPPlugin) {
         this.app = app;
         this.plugin = plugin;
-        this.logger = Logger.getInstance(app);
+        this.logger = Logger.getInstance();
     }
 
     // 获取微信素材库列表（支持分页）
@@ -133,14 +133,8 @@ export class WechatPublisher {
         const maxRetries = 3;
         const initialDelay = 1000; // 1 second
 
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                if (attempt > 0) {
-                    const delay = initialDelay * Math.pow(2, attempt - 1);
-                    this.logger.warn(`获取令牌尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-
+        try {
+            return await this.retryWithBackoff(async (attempt) => {
                 this.logger.debug(`开始获取微信访问令牌${forceRefresh ? ' (强制刷新)' : ''}`);
 
                 // 使用 stable_token 接口 (POST)
@@ -181,7 +175,8 @@ export class WechatPublisher {
                         }
                         return '';
                     }
-                    continue; // 尝试重试
+                    // 业务错误继续重试
+                    throw new Error(errmsg);
                 }
 
                 const accessToken = tokenResponse.json.access_token;
@@ -195,22 +190,17 @@ export class WechatPublisher {
                 localStorage.setItem('wechat_token_cache', JSON.stringify(newCache));
 
                 return accessToken;
-            } catch (error: any) {
-                this.logger.error(`获取微信访问令牌网络错误 (尝试 ${attempt + 1}/${maxRetries + 1}):`, error);
-
-                if (attempt === maxRetries) {
-                    const errorMsg = error.message || String(error);
-                    if (errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::')) {
-                        new Notice('获取微信令牌失败: 网络连接被关闭，请检查是否启用了代理或网络环境不稳定');
-                    } else {
-                        new Notice('获取微信访问令牌时出错，请检查网络设置');
-                    }
-                    return '';
-                }
-                // 继续下一次重试
+            }, maxRetries, initialDelay);
+        } catch (error: any) {
+            this.logger.error(`获取微信访问令牌失败:`, error);
+            const errorMsg = error.message || String(error);
+            if (this.isNetworkError(error)) {
+                new Notice('获取微信令牌失败: 网络连接被关闭，请检查是否启用了代理或网络环境不稳定');
+            } else {
+                new Notice('获取微信访问令牌时出错，请检查网络设置');
             }
+            return '';
         }
-        return '';
     }
 
     // 上传单个图片到微信公众号并获取URL
@@ -509,17 +499,7 @@ export class WechatPublisher {
                         body: JSON.stringify({
                             media_id: metadata.draft.media_id,
                             index: 0,
-                            articles: {
-                                title,
-                                content: processedContent,
-                                thumb_media_id,
-                                author: '',
-                                digest: '',
-                                show_cover_pic: thumb_media_id ? 1 : 0,
-                                content_source_url: '',
-                                need_open_comment: 0,
-                                only_fans_can_comment: 0
-                            }
+                            articles: this.buildArticlePayload(title, processedContent, thumb_media_id)
                         })
                     });
                 } else {
@@ -528,17 +508,7 @@ export class WechatPublisher {
                         url: `https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${token}`,
                         method: 'POST',
                         body: JSON.stringify({
-                            articles: [{
-                                title,
-                                content: processedContent,
-                                thumb_media_id,
-                                author: '',
-                                digest: '',
-                                show_cover_pic: thumb_media_id ? 1 : 0,
-                                content_source_url: '',
-                                need_open_comment: 0,
-                                only_fans_can_comment: 0
-                            }]
+                            articles: [this.buildArticlePayload(title, processedContent, thumb_media_id)]
                         })
                     });
                 }
@@ -556,17 +526,7 @@ export class WechatPublisher {
                         url: `https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${token}`,
                         method: 'POST',
                         body: JSON.stringify({
-                            articles: [{
-                                title,
-                                content: processedContent,
-                                thumb_media_id,
-                                author: '',
-                                digest: '',
-                                show_cover_pic: thumb_media_id ? 1 : 0,
-                                content_source_url: '',
-                                need_open_comment: 0,
-                                only_fans_can_comment: 0
-                            }]
+                            articles: [this.buildArticlePayload(title, processedContent, thumb_media_id)]
                         })
                     });
                 });
@@ -611,14 +571,8 @@ export class WechatPublisher {
         const maxRetries = 2;
         const initialDelay = 1000;
 
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                if (attempt > 0) {
-                    const delay = initialDelay * Math.pow(2, attempt - 1);
-                    this.logger.warn(`请求尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-
+        try {
+            return await this.retryWithBackoff(async (attempt) => {
                 const accessToken = await this.getAccessToken();
                 if (!accessToken) throw new Error("无法获取 Access Token，请检查：1. AppID 和 AppSecret 是否正确；2. 当前 IP 是否已添加到微信公众平台白名单（设置与开发 → 基本配置 → IP 白名单）");
 
@@ -634,18 +588,10 @@ export class WechatPublisher {
                 }
 
                 return response;
-            } catch (error: any) {
-                const errorMsg = error.message || String(error);
-                const isNetworkError = errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::');
-
-                if (isNetworkError && attempt < maxRetries) {
-                    this.logger.error(`微信接口网络错误 (尝试 ${attempt + 1}/${maxRetries + 1}):`, error);
-                    continue; // 重试
-                }
-
-                this.logger.error(`微信接口请求失败:`, error);
-                throw error;
-            }
+            }, maxRetries, initialDelay);
+        } catch (error: any) {
+            this.logger.error(`微信接口请求失败:`, error);
+            throw error;
         }
     }
 
@@ -696,5 +642,58 @@ export class WechatPublisher {
 
         this.logger.error(message);
         new Notice(message, 5000); // 显示5秒
+    }
+
+    // 判断是否为网络错误
+    private isNetworkError(error: any): boolean {
+        const errorMsg = error.message || String(error);
+        return errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::');
+    }
+
+    // 带指数退避的重试工具函数
+    private async retryWithBackoff<T>(
+        operation: (attempt: number) => Promise<T>,
+        maxRetries: number = 2,
+        initialDelay: number = 1000
+    ): Promise<T> {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 0) {
+                    const delay = initialDelay * Math.pow(2, attempt - 1);
+                    this.logger.warn(`尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                return await operation(attempt);
+            } catch (error: any) {
+                if (attempt === maxRetries) {
+                    throw error;
+                }
+                // 如果不是网络错误，直接抛出，不重试
+                if (!this.isNetworkError(error)) {
+                    throw error;
+                }
+                this.logger.error(`网络错误 (尝试 ${attempt + 1}/${maxRetries + 1}):`, error);
+            }
+        }
+        throw new Error('重试失败');
+    }
+
+    // 构建微信文章 payload 对象
+    private buildArticlePayload(
+        title: string,
+        content: string,
+        thumb_media_id: string
+    ): any {
+        return {
+            title,
+            content,
+            thumb_media_id,
+            author: '',
+            digest: '',
+            show_cover_pic: thumb_media_id ? 1 : 0,
+            content_source_url: '',
+            need_open_comment: 0,
+            only_fans_can_comment: 0
+        };
     }
 }

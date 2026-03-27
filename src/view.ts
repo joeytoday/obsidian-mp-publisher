@@ -281,6 +281,8 @@ export class MPView extends ItemView {
         );
 
         // 定期检查主题是否变更（兜底机制，确保主题管理界面的切换能同步）
+        // 注意：这是一个补丁代码，用于解决主题管理界面切换主题时预览视图未及时同步的问题
+        // 虽然轮询方式不够优雅，但删除此逻辑可能导致功能异常，因此保留
         const themeCheckIntervalId = window.setInterval(() => {
             this.syncThemeFromSettings();
         }, 2000);
@@ -345,6 +347,46 @@ export class MPView extends ItemView {
         this.applyCurrentTheme();
     }
 
+    /** 渲染下拉选择器的选项列表（通用方法） */
+    private renderSelectItems(
+        dropdown: HTMLElement,
+        selectedText: HTMLElement,
+        customSelect: HTMLElement,
+        options: { value: string; label: string }[],
+        activeValue?: string,
+    ): void {
+        dropdown.empty();
+
+        for (const option of options) {
+            const item = dropdown.createEl('div', {
+                cls: `select-item ${activeValue && option.value === activeValue ? 'selected' : ''}`,
+                text: option.label,
+            });
+            item.dataset.value = option.value;
+
+            item.addEventListener('click', () => {
+                dropdown.querySelectorAll('.select-item').forEach(el =>
+                    el.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedText.textContent = option.label;
+                customSelect.dataset.value = option.value;
+                (dropdown as HTMLElement).classList.remove('show');
+                customSelect.dispatchEvent(new CustomEvent('change', {
+                    detail: { value: option.value },
+                }));
+            });
+        }
+
+        // 更新显示文本（如果提供了 activeValue）
+        if (activeValue) {
+            const activeOption = options.find(o => o.value === activeValue);
+            if (activeOption) {
+                selectedText.textContent = activeOption.label;
+                customSelect.dataset.value = activeOption.value;
+            }
+        }
+    }
+
     /** 重建下拉选择器的选项列表 */
     private rebuildSelectOptions(
         selectContainer: HTMLElement,
@@ -356,34 +398,7 @@ export class MPView extends ItemView {
         const customSelect = selectContainer.querySelector('.custom-select');
         if (!dropdown || !selectedText || !customSelect) return;
 
-        dropdown.empty();
-
-        for (const option of options) {
-            const item = dropdown.createEl('div', {
-                cls: `select-item ${option.value === activeValue ? 'selected' : ''}`,
-                text: option.label,
-            });
-            item.dataset.value = option.value;
-
-            item.addEventListener('click', () => {
-                dropdown.querySelectorAll('.select-item').forEach(el =>
-                    el.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedText.textContent = option.label;
-                customSelect.setAttribute('data-value', option.value);
-                (dropdown as HTMLElement).classList.remove('show');
-                customSelect.dispatchEvent(new CustomEvent('change', {
-                    detail: { value: option.value },
-                }));
-            });
-        }
-
-        // 更新显示文本
-        const activeOption = options.find(o => o.value === activeValue);
-        if (activeOption) {
-            selectedText.textContent = activeOption.label;
-            customSelect.setAttribute('data-value', activeOption.value);
-        }
+        this.renderSelectItems(dropdown as HTMLElement, selectedText as HTMLElement, customSelect as HTMLElement, options, activeValue);
     }
 
     /** 恢复下拉选择器的值 */
@@ -536,32 +551,8 @@ export class MPView extends ItemView {
 
         const dropdown = container.createEl('div', { cls: 'select-dropdown' });
 
-        options.forEach(option => {
-            const item = dropdown.createEl('div', {
-                cls: 'select-item',
-                text: option.label,
-            });
-
-            item.dataset.value = option.value;
-            item.addEventListener('click', () => {
-                dropdown.querySelectorAll('.select-item').forEach(el =>
-                    el.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedText.textContent = option.label;
-                select.dataset.value = option.value;
-                dropdown.classList.remove('show');
-                select.dispatchEvent(new CustomEvent('change', {
-                    detail: { value: option.value },
-                }));
-            });
-        });
-
-        // 设置默认值
-        if (options.length > 0) {
-            selectedText.textContent = options[0].label;
-            select.dataset.value = options[0].value;
-            dropdown.querySelector('.select-item')?.classList.add('selected');
-        }
+        // 使用通用的渲染方法创建选项
+        this.renderSelectItems(dropdown, selectedText, select, options, options[0]?.value);
 
         select.addEventListener('click', (e) => {
             e.stopPropagation();

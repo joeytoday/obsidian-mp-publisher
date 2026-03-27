@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import { serializeToHtml } from './utils/html-cleaner';
 
 export class CopyManager {
     /**
@@ -122,9 +123,7 @@ export class CopyManager {
         contentSection.querySelectorAll('style').forEach(tag => tag.remove());
 
         // 3. 序列化为 HTML 字符串
-        const serializer = new XMLSerializer();
-        let rawHtml = serializer.serializeToString(contentSection);
-        rawHtml = rawHtml.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
+        let rawHtml = serializeToHtml(contentSection as HTMLElement);
 
         // 4. 使用 juice 将 CSS 内联到每个元素的 style 属性
         let inlinedHtml = await this.inlineCSS(rawHtml, themeCSS);

@@ -15,7 +15,7 @@ export class ProgressIndicator {
 
     constructor(app: App) {
         this.app = app;
-        this.logger = Logger.getInstance(app);
+        this.logger = Logger.getInstance();
     }
 
     /**

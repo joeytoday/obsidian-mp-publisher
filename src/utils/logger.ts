@@ -1,20 +1,15 @@
-import { App } from 'obsidian';
-
 /**
- * 日志工具类 - 统一管理日志输出
+ * 日志工具 - 统一管理日志输出
  */
 export class Logger {
     private static instance: Logger;
     private debugMode: boolean = false;
-    private app: App;
 
-    private constructor(app: App) {
-        this.app = app;
-    }
+    private constructor() {}
 
-    public static getInstance(app: App): Logger {
+    public static getInstance(): Logger {
         if (!Logger.instance) {
-            Logger.instance = new Logger(app);
+            Logger.instance = new Logger();
         }
         return Logger.instance;
     }
@@ -29,21 +24,19 @@ export class Logger {
 
     public debug(...args: any[]): void {
         if (this.debugMode) {
-            console.log('[DEBUG]', ...args);
+            console.debug('[MP-DEBUG]', ...args);
         }
     }
 
     public info(...args: any[]): void {
-        if (this.debugMode) {
-            console.log('[INFO]', ...args);
-        }
+        console.log('[MP-INFO]', ...args);
     }
 
     public warn(...args: any[]): void {
-        console.warn('[WARN]', ...args);
+        console.warn('[MP-WARN]', ...args);
     }
 
     public error(...args: any[]): void {
-        console.error('[ERROR]', ...args);
+        console.error('[MP-ERROR]', ...args);
     }
 }

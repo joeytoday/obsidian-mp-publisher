@@ -1,5 +1,5 @@
 import { App, MarkdownRenderer, Component } from 'obsidian';
-import { cleanObsidianUIElements } from './utils/html-cleaner';
+import { cleanObsidianUIElements, serializeToHtml } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import type { ThemeManager } from './themeManager';
 
@@ -328,14 +328,12 @@ export async function markdownToHtml(
         tempDiv.removeAttribute('style');
 
         // 序列化 HTML
-        const serializer = new XMLSerializer();
         const cleanContainer = document.createElement('div');
         while (tempDiv.firstChild) {
             cleanContainer.appendChild(tempDiv.firstChild);
         }
 
-        let htmlContent = serializer.serializeToString(cleanContainer);
-        htmlContent = htmlContent.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
+        let htmlContent = serializeToHtml(cleanContainer);
 
         // 处理数学公式
         if (convertMathToSVG && htmlContent.includes('mjx-')) {

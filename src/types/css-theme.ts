@@ -44,21 +44,14 @@ export interface RemoteThemeIndex {
     previewUrl?: string;
 }
 
-/** 主题管理器设置 */
+/** 主题管理器设置（从 MPSettings 中提取主题相关字段，避免重复定义） */
 export interface ThemeSettings {
-    /** 当前选中的主题 ID */
     activeThemeId: string;
-    /** 字体 */
     fontFamily: string;
-    /** 字号 */
     fontSize: number;
-    /** 自定义字体列表 */
     customFonts: FontOption[];
-    /** 已下载的云端主题 */
     downloadedRemoteThemes: CSSTheme[];
-    /** 云端主题索引缓存 */
     remoteThemeIndexCache?: RemoteThemeIndex[];
-    /** 云端索引最后更新时间 */
     remoteIndexLastUpdate?: number;
 }
 

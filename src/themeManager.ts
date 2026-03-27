@@ -371,13 +371,6 @@ export class ThemeManager {
 
     /** 重新加载本地主题（文件变更后） */
     async reloadLocalThemes(): Promise<void> {
-        // 移除所有本地主题
-        for (const [id, theme] of this.themes.entries()) {
-            if (theme.source === ThemeSource.LOCAL) {
-                this.themes.delete(id);
-            }
-        }
-        // 重新加载
         await this.loadLocalThemes();
     }
 

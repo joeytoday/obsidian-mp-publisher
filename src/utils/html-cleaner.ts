@@ -1,12 +1,27 @@
-import { Logger } from './logger';
-import { App } from 'obsidian';
+/**
+ * HTML 清理与序列化工具
+ */
 
 /**
- * 清理HTML内容，移除Obsidian特有的UI元素
- * 这个函数可以在预览和发布时共享使用
+ * 将 DOM 元素序列化为 HTML 字符串，并清理 XMLSerializer 自动添加的 xmlns 属性
  */
+export function serializeToHtml(element: HTMLElement): string {
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(element)
+        .replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
+}
+
 /**
- * 清理HTML内容，移除Obsidian特有的UI元素
+ * 判断元素是否为 SVG 或包含 SVG（用于避免误删图表元素）
+ */
+function isSvgRelated(element: Element): boolean {
+    return element.tagName.toLowerCase() === 'svg'
+        || element.querySelector('svg') !== null
+        || element.closest('.mermaid, .plantuml, pre.mermaid, pre.plantuml') !== null;
+}
+
+/**
+ * 清理 HTML 内容，移除 Obsidian 特有的 UI 元素
  * 直接操作 DOM 元素，避免反复序列化和解析带来的风险
  */
 export function cleanObsidianUIElements(element: HTMLElement): void {
@@ -24,14 +39,8 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
         ];
 
         elementsToRemove.forEach(selector => {
-            const elements = element.querySelectorAll(selector);
-            elements.forEach(el => {
-                // 不删除 SVG 元素或包含 SVG 的元素
-                const isSVG = el.tagName.toLowerCase() === 'svg';
-                const containsSVG = el.querySelector('svg') !== null;
-                const isInDiagram = el.closest('.mermaid, .plantuml, pre.mermaid, pre.plantuml') !== null;
-
-                if (!isSVG && !containsSVG && !isInDiagram) {
+            element.querySelectorAll(selector).forEach(el => {
+                if (!isSvgRelated(el)) {
                     el.remove();
                 }
             });
@@ -40,19 +49,10 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
         // 清理代码块中的额外包装元素和按钮
         const preElements = element.querySelectorAll('pre');
         preElements.forEach(pre => {
-            // 1. 检查是否显式标记为图表
-            const isExplicitDiagram = pre.classList.contains('mermaid') ||
-                pre.classList.contains('plantuml');
-
-            // 2. 检查内部是否有图表容器
-            const hasDiagramContainer = pre.querySelector('.mermaid') !== null ||
-                pre.querySelector('.plantuml') !== null ||
-                pre.querySelector('[class*="mermaid"]') !== null;
-
-            // 3. 检查是否有 SVG 元素
-            const hasSVG = pre.getElementsByTagName('svg').length > 0;
-
-            const isDiagram = isExplicitDiagram || hasDiagramContainer || hasSVG;
+            const isDiagram = pre.classList.contains('mermaid')
+                || pre.classList.contains('plantuml')
+                || pre.querySelector('.mermaid, .plantuml, [class*="mermaid"]') !== null
+                || pre.getElementsByTagName('svg').length > 0;
 
             // 只移除pre内部的按钮元素
             const buttons = pre.querySelectorAll('button');
@@ -67,12 +67,9 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
                         return;
                     }
 
-                    // 双重检查：如果这个 child 包含 SVG，绝对不要移除它
-                    if (child.getElementsByTagName('svg').length > 0) {
-                        return;
+                    if (child.getElementsByTagName('svg').length === 0) {
+                        child.remove();
                     }
-
-                    child.remove();
                 });
             }
         });
