@@ -89,20 +89,24 @@
 }
 
 .mp-content-section pre .mp-code-header {
-  margin-bottom: 0.8em;
-  display: flex;
-  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0;
+  line-height: 0;
 }
 
 .mp-content-section pre .mp-code-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  display: inline-block;
+  font-size: 12px;
+  margin-right: 6px;
+  line-height: 1;
+}
+.mp-content-section pre .mp-code-dot:last-child {
+  margin-right: 0;
 }
 
-.mp-content-section pre .mp-code-dot:nth-child(1) { background-color: #ff5f56; }
-.mp-content-section pre .mp-code-dot:nth-child(2) { background-color: #ffbd2e; }
-.mp-content-section pre .mp-code-dot:nth-child(3) { background-color: #27c93f; }
+.mp-content-section pre .mp-code-dot:nth-child(1) { color: #ff5f56; }
+.mp-content-section pre .mp-code-dot:nth-child(2) { color: #ffbd2e; }
+.mp-content-section pre .mp-code-dot:nth-child(3) { color: #27c93f; }
 
 .mp-content-section code:not(pre code) {
   background: #f5f5f5;

@@ -41,17 +41,19 @@ export class MPConverter {
             const codeEl = pre.querySelector('code');
             if (codeEl) {
                 // 添加 macOS 风格的窗口按钮
+                // 使用 Unicode 实心圆字符 (●) 而非 CSS 绘制的圆点，确保公众号编辑器不会剥离样式
                 const header = document.createElement('div');
                 header.className = 'mp-code-header';
-                // 添加内联样式，确保粘贴到公众号后样式不丢失
-                header.style.cssText = 'display: flex; gap: 6px; margin-bottom: 1em;';
+                // 使用 inline-block 布局，避免 flex 在公众号中被剥离
+                header.style.cssText = 'margin-bottom: 8px; font-size: 0; line-height: 0;';
 
                 const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (let i = 0; i < 3; i++) {
                     const dot = document.createElement('span');
                     dot.className = 'mp-code-dot';
-                    // 添加内联样式，确保圆点样式在公众号编辑器中正确显示
-                    dot.style.cssText = `width: 12px; height: 12px; border-radius: 50%; background-color: ${dotColors[i]};`;
+                    // 使用 Unicode ● 字符 + color 属性，确保在公众号中可见
+                    dot.style.cssText = `display: inline-block; font-size: 12px; color: ${dotColors[i]}; margin-right: 6px; line-height: 1;`;
+                    dot.textContent = '●';
                     header.appendChild(dot);
                 }
 
