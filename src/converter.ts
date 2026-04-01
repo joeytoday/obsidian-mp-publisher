@@ -41,11 +41,11 @@ export class MPConverter {
             const codeEl = pre.querySelector('code');
             if (codeEl) {
                 // 添加 macOS 风格的窗口按钮
-                // 使用 Unicode 实心圆字符 (●) 而非 CSS 绘制的圆点，确保公众号编辑器不会剥离样式
-                const header = document.createElement('div');
+                // 使用 <span> 而非 <div>，确保在 <pre> 内合法，公众号编辑器不会移除
+                const header = document.createElement('span');
                 header.className = 'mp-code-header';
-                // 不使用 font-size:0（会导致子元素继承 0 字号），用 margin-right 控制间距
-                header.style.cssText = 'margin-bottom: 8px;';
+                // 块级显示 + 底部间距
+                header.style.cssText = 'display: block; margin-bottom: 8px;';
 
                 const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (let i = 0; i < 3; i++) {

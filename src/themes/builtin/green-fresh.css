@@ -96,6 +96,7 @@
 }
 
 .mp-content-section pre .mp-code-header {
+  display: block;
   margin-bottom: 8px;
 }
 
