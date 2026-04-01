@@ -41,21 +41,26 @@ export class MPConverter {
             const codeEl = pre.querySelector('code');
             if (codeEl) {
                 // 添加 macOS 风格的窗口按钮
-                // 使用 <span> 而非 <div>，确保在 <pre> 内合法，公众号编辑器不会移除
-                const header = document.createElement('span');
+                // 使用 <table> 布局而非 <span>，确保公众号编辑器不会移除
+                // WeChat 对 <table> 的支持非常稳定，bgcolor 属性不会被剥离
+                const header = document.createElement('table');
                 header.className = 'mp-code-header';
-                // 块级显示 + 底部间距
-                header.style.cssText = 'display: block; margin-bottom: 8px;';
+                header.setAttribute('cellpadding', '0');
+                header.setAttribute('cellspacing', '0');
+                header.setAttribute('border', '0');
+                header.style.cssText = 'border-collapse: collapse; margin-bottom: 8px;';
 
+                const tr = document.createElement('tr');
                 const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (let i = 0; i < 3; i++) {
-                    const dot = document.createElement('span');
-                    dot.className = 'mp-code-dot';
-                    // 使用 Unicode ● 字符 + color 属性，确保在公众号中可见
-                    dot.style.cssText = `display: inline-block; font-size: 12px; color: ${dotColors[i]}; margin-right: 6px; line-height: 1;`;
-                    dot.textContent = '●';
-                    header.appendChild(dot);
+                    const td = document.createElement('td');
+                    td.setAttribute('bgcolor', dotColors[i]);
+                    td.style.cssText = 'width: 12px; height: 12px; padding: 0;';
+                    // 使用 Unicode ● 字符确保可见
+                    td.innerHTML = '<font color="' + dotColors[i] + '" size="2">●</font>';
+                    tr.appendChild(td);
                 }
+                header.appendChild(tr);
 
                 pre.insertBefore(header, pre.firstChild);
 
