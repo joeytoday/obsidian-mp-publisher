@@ -43,10 +43,15 @@ export class MPConverter {
                 // 添加 macOS 风格的窗口按钮
                 const header = document.createElement('div');
                 header.className = 'mp-code-header';
+                // 添加内联样式，确保粘贴到公众号后样式不丢失
+                header.style.cssText = 'display: flex; gap: 6px; margin-bottom: 1em;';
 
+                const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (let i = 0; i < 3; i++) {
                     const dot = document.createElement('span');
                     dot.className = 'mp-code-dot';
+                    // 添加内联样式，确保圆点样式在公众号编辑器中正确显示
+                    dot.style.cssText = `width: 12px; height: 12px; border-radius: 50%; background-color: ${dotColors[i]};`;
                     header.appendChild(dot);
                 }
 
