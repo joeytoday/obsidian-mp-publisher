@@ -44,8 +44,8 @@ export class MPConverter {
                 // 使用 Unicode 实心圆字符 (●) 而非 CSS 绘制的圆点，确保公众号编辑器不会剥离样式
                 const header = document.createElement('div');
                 header.className = 'mp-code-header';
-                // 使用 inline-block 布局，避免 flex 在公众号中被剥离
-                header.style.cssText = 'margin-bottom: 8px; font-size: 0; line-height: 0;';
+                // 不使用 font-size:0（会导致子元素继承 0 字号），用 margin-right 控制间距
+                header.style.cssText = 'margin-bottom: 8px;';
 
                 const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (let i = 0; i < 3; i++) {
