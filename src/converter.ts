@@ -98,7 +98,8 @@ export class MPConverter {
     }
 
     /**
-     * 将列表元素转换为 section + p 结构
+     * 将列表元素转换为纯 section 结构
+     * 避免使用 ul/ol/li/p 等会被微信公众号自动处理的标签
      */
     private static convertListsToSection(container: HTMLElement): void {
         // 持续处理，直到没有列表元素
@@ -115,7 +116,8 @@ export class MPConverter {
     }
 
     /**
-     * 转换单个列表元素
+     * 转换单个列表元素为纯 section 结构
+     * 所有标签统一使用 section，不使用 p/ul/ol/li 等会被公众号还原的标签
      */
     private static convertSingleList(listElement: HTMLElement): void {
         const isOrdered = listElement.tagName.toLowerCase() === 'ol';
@@ -136,7 +138,13 @@ export class MPConverter {
             parent = parent.parentElement;
         }
         
-        const basePaddingLeft = 2 + indentLevel * 2; // em
+        // 嵌套列表容器清零 margin/padding，顶层列表保留上边距
+        section.style.cssText = indentLevel > 0
+            ? 'margin: 0; padding: 0;'
+            : 'margin: 1em 0 0 0; padding: 0;';
+
+        // 一级列表不缩进，二级及以上才缩进
+        const basePaddingLeft = indentLevel > 0 ? indentLevel * 2 : 0; // em
 
         let itemNumber = 1;
         for (const li of listItems) {
@@ -151,35 +159,38 @@ export class MPConverter {
                 nestedList.remove();
             }
             
-            // 创建段落
-            const p = document.createElement('p');
-            p.className = 'mp-list-item';
-            p.style.cssText = `margin: 0.5em 0; padding-left: ${basePaddingLeft}em; line-height: 1.8;`;
+            // 使用 section 而非 p，避免公众号将 p 解析为段落产生多余空行
+            const itemSection = document.createElement('section');
+            itemSection.className = 'mp-list-item';
+            itemSection.style.cssText = `display: block; margin: 0; padding-left: ${basePaddingLeft}em; line-height: 1.8;`;
             
             // 添加编号或符号
             const marker = isOrdered ? `${itemNumber}. ` : '• ';
             const markerSection = document.createElement('section');
             markerSection.textContent = marker;
             markerSection.style.cssText = 'display: inline; margin-right: 0.25em;';
-            p.appendChild(markerSection);
+            itemSection.appendChild(markerSection);
             
             // 添加内容
             const contentSection = document.createElement('section');
             contentSection.style.cssText = 'display: inline;';
             contentSection.innerHTML = liElement.innerHTML;
-            p.appendChild(contentSection);
             
-            section.appendChild(p);
+            // 将内容中的 <p> 标签内联化，避免公众号产生额外空行
+            contentSection.querySelectorAll('p').forEach(pEl => {
+                (pEl as HTMLElement).style.display = 'inline';
+                (pEl as HTMLElement).style.margin = '0';
+                (pEl as HTMLElement).style.padding = '0';
+            });
             
-            // 如果有嵌套列表，递归处理
+            itemSection.appendChild(contentSection);
+            section.appendChild(itemSection);
+            
+            // 如果有嵌套列表，先挂到当前 section 下再递归
+            // 这样递归时向上遍历能找到 .mp-list-section，indentLevel 才能正确计算
             if (nestedListClone) {
-                const nestedSection = document.createElement('div');
-                nestedSection.appendChild(nestedListClone);
+                section.appendChild(nestedListClone);
                 this.convertSingleList(nestedListClone);
-                // 将转换后的内容添加到 section
-                while (nestedSection.firstChild) {
-                    section.appendChild(nestedSection.firstChild);
-                }
             }
             
             itemNumber++;

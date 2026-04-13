@@ -11,6 +11,7 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 - **本地自定义主题**：在插件目录 `custom/` 文件夹下放置 `.css` 文件即可加载为自定义主题
 - **主题管理界面**：通过命令面板打开独立的主题管理视图，支持浏览、切换、新建、编辑、重命名、删除主题
 - **查看与复制 CSS**：在主题卡片中一键查看完整 CSS 源码，支持一键复制
+- 📖 **编写自定义主题前请阅读 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)**，了解可用选择器和禁止使用的 CSS 特性和完整模板
 
 https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe
 
@@ -188,6 +189,7 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 - CSS 主题使用 `.mp-content-section` 作为根选择器
 - 可在主题卡片中点击「查看 CSS」查看完整源码，一键复制后修改
 - 使用"预览"功能查看效果后再保存
+- 📖 **编写自定义主题前请阅读 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)**，了解可用选择器和禁止使用的 CSS 特性和完整模板
 
 ### 3. 数学公式
 - 使用 `$...$` 或 `\(...\)` 包裹行内公式
@@ -255,8 +257,8 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 ### Q: 样式在公众号编辑器中显示不正确？
 **A:** 
 1. 使用"复制到公众号"功能而不是直接复制粘贴
-2. 某些复杂样式可能被微信编辑器过滤，尝试简化样式
-3. 确保在预览窗口选择的样式正确
+2. 自定义主题中不要使用 CSS 变量 `var(--xxx)`、伪元素 `::before`/`::after`、`@media` 查询等，这些在复制/发布时会丢失。详见 [CSS 主题编写指南](CSS_THEME_GUIDE.md)
+3. 确保所有选择器以 `.mp-content-section` 开头
 4. 尝试清除浏览器缓存后重新打开公众号编辑器
 
 ### Q: 如何获取微信公众号的 AppID 和 AppSecret？
@@ -275,6 +277,8 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 **A:** 有两种方式：
 1. **通过主题管理界面**：命令面板搜索「打开主题管理」，在本地自定义主题区域点击「+ 新建主题」，输入名称和 CSS 内容后保存
 2. **直接放置 CSS 文件**：将 `.css` 文件放入插件目录的 `custom/` 文件夹中，在主题管理界面点击「重新加载」即可
+
+📖 **推荐阅读 [CSS 主题编写指南](CSS_THEME_GUIDE.md)**，包含完整的选择器说明、禁止使用的 CSS 特性清单和可直接使用的模板。如果你使用 AI 生成主题，请将该指南提供给 AI 参考。
 
 CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 ```css
@@ -350,8 +354,8 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 
 本软件采用 **双重许可** 模式：
 
-- **个人/非商业使用**：[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)（知识共享 署名 - 非商业性使用 - 相同方式共享 4.0 国际）
-- **商业使用**：需要商业授权，请联系作者
+- **开源使用**：[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) — 可自由使用和修改，但衍生作品必须以相同协议开源
+- **商业使用**：需要商业授权，请联系作者（joeykai2022@126.com）
 
 详见 [LICENSE](LICENSE) 文件。
 
@@ -360,6 +364,12 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 本插件整合了以下优秀项目的功能：
 - [mp-preview](https://github.com/Yeban8090/mp-preview): 样式模板预览系统，已重构样式，但依然感谢作者的工作。
 - [obsidian-enhanced-publisher](https://github.com/chararch/obsidian-enhanced-publisher): 微信发布功能有参考。
+
+---
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=joeytoday/obsidian-mp-publisher&type=Date)](https://star-history.com/#joeytoday/obsidian-mp-publisher&Date)
 
 ---
 

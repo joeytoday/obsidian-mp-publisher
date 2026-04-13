@@ -1,6 +1,6 @@
 {
   "name": "mp-publisher",
-  "version": "2.3.4",
+  "version": "2.3.6",
   "description": "公众号发布插件，支持自定义样式预览和一键发布到微信公众号",
   "main": "main.js",
   "scripts": {

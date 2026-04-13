@@ -53,21 +53,14 @@
   color: #4a4a4a;
 }
 
-/* 列表 */
-.mp-content-section ul,
-.mp-content-section ol {
-  padding-left: 32px;
+/* 列表（已转换为 section 结构，避免公众号自动处理 ul/ol/li） */
+.mp-content-section .mp-list-section {
+  margin: 1em 0 0 0;
+  padding: 0;
   color: #4a4a4a;
 }
 
-.mp-content-section li {
-  font-size: 1em;
-  color: #4a4a4a;
-  line-height: 1.8;
-}
-
-.mp-content-section .task-list-item {
-  list-style: none;
+.mp-content-section .mp-list-item {
   font-size: 1em;
   color: #4a4a4a;
   line-height: 1.8;

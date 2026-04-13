@@ -54,15 +54,13 @@
   color: #3f3f3f;
 }
 
-/* 列表 */
-.mp-content-section ul,
-.mp-content-section ol {
-  padding-left: 30px;
-  margin: 15px 0;
+/* 列表（已转换为 section 结构，避免公众号自动处理 ul/ol/li） */
+.mp-content-section .mp-list-section {
+  margin: 15px 0 0 0;
+  padding: 0;
 }
 
-.mp-content-section li {
-  margin: 8px 0;
+.mp-content-section .mp-list-item {
   line-height: 1.75;
   color: #3f3f3f;
 }

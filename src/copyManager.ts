@@ -55,17 +55,19 @@ export class CopyManager {
 
     /**
      * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为 section + p 结构
-     * 这里只处理 mp-list-section 的样式调整
+     * 列表已在 converter.ts 中转换为纯 section 结构
+     * 这里确保 mp-list-item 的内联样式在 CSS 内联后仍然正确
      */
     private static processLists(container: HTMLElement): void {
-        // 处理已转换的列表项样式
         container.querySelectorAll('.mp-list-item').forEach(item => {
             const el = item as HTMLElement;
-            // 确保样式正确
-            if (!el.style.paddingLeft) {
-                el.style.paddingLeft = '2em';
-            }
+            // 不强制覆盖 padding-left，converter 已根据层级正确设置
+            // 确保列表项内部的 p 标签保持内联，防止 juice 内联后被覆盖
+            el.querySelectorAll('p').forEach(pEl => {
+                (pEl as HTMLElement).style.display = 'inline';
+                (pEl as HTMLElement).style.margin = '0';
+                (pEl as HTMLElement).style.padding = '0';
+            });
         });
     }
 
