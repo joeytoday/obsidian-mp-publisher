@@ -25,6 +25,7 @@ export interface DraftMetadata {
 export interface DocumentMetadata {
     images: { [key: string]: ImageMetadata }; // key 是图片文件名
     draft?: DraftMetadata;
+    lastUsedAt?: number;
 }
 
 /**
@@ -33,19 +34,17 @@ export interface DocumentMetadata {
  * @param file 当前文档文件
  */
 export function getOrCreateMetadata(
-    plugin: { settingsManager: { getSettings(): any } },
+    plugin: { metadataStore: { get(filePath: string): DocumentMetadata | null } },
     file: TFile,
 ): DocumentMetadata {
-    const settings = plugin.settingsManager.getSettings();
-    const allMetadata = settings.documentMetadata || {};
-    const filePath = file.path;
-
-    if (allMetadata[filePath]) {
-        return allMetadata[filePath];
+    const metadata = plugin.metadataStore.get(file.path);
+    if (metadata) {
+        touchMetadata(metadata);
+        return metadata;
     }
 
     // 返回新的空元数据对象
-    return { images: {} };
+    return { images: {}, lastUsedAt: Date.now() };
 }
 
 /**
@@ -55,14 +54,12 @@ export function getOrCreateMetadata(
  * @param metadata 要保存的元数据
  */
 export async function updateMetadata(
-    plugin: { settingsManager: { getSettings(): any; updateSettings(updates: any): Promise<void> } },
+    plugin: { metadataStore: { set(filePath: string, metadata: DocumentMetadata): Promise<void> } },
     file: TFile,
     metadata: DocumentMetadata,
 ): Promise<void> {
-    const settings = plugin.settingsManager.getSettings();
-    const allMetadata = settings.documentMetadata || {};
-    allMetadata[file.path] = metadata;
-    await plugin.settingsManager.updateSettings({ documentMetadata: allMetadata });
+    touchMetadata(metadata);
+    await plugin.metadataStore.set(file.path, metadata);
 }
 
 // 检查图片是否已上传
@@ -84,4 +81,10 @@ export function updateDraftMetadata(metadata: DocumentMetadata, draftData: any):
         content: draftData.content,
         updateTime: Date.now()
     };
+    touchMetadata(metadata);
+}
+
+// 更新元数据最近使用时间
+export function touchMetadata(metadata: DocumentMetadata): void {
+    metadata.lastUsedAt = Date.now();
 }

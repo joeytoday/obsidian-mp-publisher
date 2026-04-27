@@ -16,6 +16,10 @@ export interface MPSettings {
     debugMode: boolean;
     // 文档发布元数据（图片缓存、草稿 ID 等），以文件路径为 key
     documentMetadata: Record<string, DocumentMetadata>;
+    // 元数据缓存清理
+    cacheCleanupEnabled: boolean;
+    cacheRetentionMode: '3' | '7' | 'custom';
+    cacheRetentionDays: number;
     // 数学公式设置
     convertMathToSVG: boolean;
 }
@@ -33,6 +37,10 @@ const DEFAULT_SETTINGS: MPSettings = {
     debugMode: false,
     // 文档发布元数据
     documentMetadata: {},
+    // 元数据缓存清理默认设置
+    cacheCleanupEnabled: true,
+    cacheRetentionMode: '7',
+    cacheRetentionDays: 7,
     // 数学公式默认设置
     convertMathToSVG: true,
 };
@@ -62,6 +70,18 @@ export class SettingsManager {
         // 确保 downloadedRemoteThemes 存在
         if (!savedData.downloadedRemoteThemes) {
             savedData.downloadedRemoteThemes = [];
+        }
+
+        if (!savedData.cacheRetentionMode || !['3', '7', 'custom'].includes(savedData.cacheRetentionMode)) {
+            savedData.cacheRetentionMode = '7';
+        }
+
+        if (typeof savedData.cacheCleanupEnabled !== 'boolean') {
+            savedData.cacheCleanupEnabled = true;
+        }
+
+        if (typeof savedData.cacheRetentionDays !== 'number' || savedData.cacheRetentionDays < 1) {
+            savedData.cacheRetentionDays = 7;
         }
 
         this.settings = { ...DEFAULT_SETTINGS, ...savedData };

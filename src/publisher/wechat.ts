@@ -1,6 +1,6 @@
 import { App, Notice, requestUrl, TFile } from 'obsidian';
 import MPPlugin from '../main';
-import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
+import { DocumentMetadata, getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata, touchMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
 
@@ -280,6 +280,7 @@ export class WechatPublisher {
 
             // 获取或创建元数据（存储在插件 data.json 中，不再生成文件系统上的文件夹）
             const metadata = getOrCreateMetadata(this.plugin, file);
+            touchMetadata(metadata);
 
             // 使用 innerHTML 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
             const tempDiv = document.createElement('div');
@@ -318,6 +319,7 @@ export class WechatPublisher {
             this.processLists(tempDiv);
 
             // 使用 innerHTML 输出，保持与输入一致的 HTML 结构，不引入额外的 xmlns 等属性
+            await updateMetadata(this.plugin, file, metadata);
             return tempDiv.innerHTML;
         } catch (error) {
             this.logger.error('处理文档图片时出错:', error);
@@ -383,7 +385,7 @@ export class WechatPublisher {
     async processImage(
         imagePath: string,
         file: TFile,
-        metadata: any,
+        metadata: DocumentMetadata,
     ): Promise<string | null> {
         try {
             // 1. 处理 Base64 Data URL (通常是公式转换生成的)
@@ -532,6 +534,7 @@ export class WechatPublisher {
 
             // 获取元数据
             const metadata = getOrCreateMetadata(this.plugin, file);
+            touchMetadata(metadata);
 
             // 准备更新数据
             let updateData = {

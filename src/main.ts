@@ -11,12 +11,14 @@ import { MPSettingTab } from './settings/MPSettingTab';
 import { WechatPublisher } from './publisher/wechat';
 import { showPublishModal } from './publisher';
 import { Logger } from './utils/logger';
+import { DocumentMetadataStore } from './storage/documentMetadataStore';
 
 export default class MPPublisherPlugin extends Plugin {
-  settingsManager: SettingsManager;
-  themeManager: ThemeManager;
-  wechatPublisher: WechatPublisher;
-  logger: Logger;
+  settingsManager!: SettingsManager;
+  themeManager!: ThemeManager;
+  wechatPublisher!: WechatPublisher;
+  logger!: Logger;
+  metadataStore!: DocumentMetadataStore;
   showPublishModal = showPublishModal;
 
   // 为了兼容性，添加 settings getter
@@ -32,6 +34,9 @@ export default class MPPublisherPlugin extends Plugin {
     // 初始化设置管理器
     this.settingsManager = new SettingsManager(this);
     await this.settingsManager.loadSettings();
+
+    // 初始化文档元数据存储并迁移旧数据
+    await this.initializeMetadataStore();
 
     // 设置调试模式
     this.logger.setDebugMode(this.settings.debugMode);
@@ -114,6 +119,9 @@ export default class MPPublisherPlugin extends Plugin {
     // 添加设置面板
     this.addSettingTab(new MPSettingTab(this.app, this));
 
+    // 启动时自动清理一次
+    await this.runAutoMetadataCleanup('startup');
+
     this.logger.info('MP Publisher 插件加载完成');
   }
 
@@ -155,7 +163,44 @@ export default class MPPublisherPlugin extends Plugin {
 
   // 包装微信发布功能供UI调用
   async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile): Promise<boolean> {
+    await this.runAutoMetadataCleanup('publish');
     return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file);
+  }
+
+  getMetadataRetentionDays(): number {
+    const settings = this.settingsManager.getSettings();
+    if (settings.cacheRetentionMode === '3') return 3;
+    if (settings.cacheRetentionMode === '7') return 7;
+    return Math.max(1, Number(settings.cacheRetentionDays) || 7);
+  }
+
+  async runAutoMetadataCleanup(trigger: 'startup' | 'publish'): Promise<number> {
+    const settings = this.settingsManager.getSettings();
+    if (!settings.cacheCleanupEnabled) return 0;
+
+    const days = this.getMetadataRetentionDays();
+    const removed = await this.metadataStore.cleanupExpired(days);
+    if (removed > 0) {
+      this.logger.info(`已自动清理 ${removed} 条过期元数据（${days} 天，触发: ${trigger}）`);
+    }
+    return removed;
+  }
+
+  private async initializeMetadataStore(): Promise<void> {
+    this.metadataStore = new DocumentMetadataStore(this.app, this.manifest.id);
+    await this.metadataStore.initialize();
+
+    const legacyData = this.settingsManager.getSettings().documentMetadata || {};
+    const legacyCount = Object.keys(legacyData).length;
+    if (legacyCount <= 0) return;
+
+    const imported = await this.metadataStore.importLegacy(legacyData);
+    await this.settingsManager.updateSettings({ documentMetadata: {} });
+
+    this.logger.info(`已迁移 ${imported}/${legacyCount} 条旧 documentMetadata 到独立文件存储`);
+    if (imported > 0) {
+      new Notice(`已迁移 ${imported} 条文档元数据到独立文件存储`);
+    }
   }
 
   onunload() {
