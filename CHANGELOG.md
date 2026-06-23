@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.6.1] - 2026-06-23
+
+### 🔧 代码规范
+
+- 修复 Obsidian 插件 review 要求的所有 Error 级别问题
+- 最低支持版本提升至 1.7.2（覆盖 revealLeaf 等 API 要求）
+- 使用 Obsidian 规范 API：`setCssProps` 替代直接 style 赋值、`sanitizeHTMLToDom` 替代 innerHTML、`activeDocument` 替代 `document`、`window.setTimeout` 替代 `setTimeout`
+
+---
+
 ## [2.5.4] - 2026-06-23
 
 ### 🐛 Bug 修复

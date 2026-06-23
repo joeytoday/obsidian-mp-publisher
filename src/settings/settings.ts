@@ -56,11 +56,11 @@ const DEFAULT_SETTINGS: MPSettings = {
 };
 
 export class SettingsManager {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Obsidian Plugin lacks public type definitions for loadData/saveData
     private plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> };
     private settings: MPSettings;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Obsidian Plugin lacks public type definitions for loadData/saveData
     constructor(plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> }) {
         this.plugin = plugin;
         this.settings = { ...DEFAULT_SETTINGS };

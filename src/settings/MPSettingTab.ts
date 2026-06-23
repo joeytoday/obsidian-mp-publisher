@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import { VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from '../guideView';
 import MPPlugin from '../main';
 import { WechatAccount } from './settings';

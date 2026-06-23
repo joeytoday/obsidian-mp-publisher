@@ -51,7 +51,7 @@ export class ThemeCSSView extends ItemView {
         this.renderCSS(container);
 
         // Obsidian 内部 API，无公开类型定义
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- leaf.updateHeader is an internal API with no public type
         (this.leaf as any).updateHeader?.();
     }
 
@@ -115,7 +115,7 @@ export class ThemeCSSView extends ItemView {
                 : theme.css;
             await navigator.clipboard.writeText(cssContent);
             copyButton.textContent = '已复制';
-            setTimeout(() => { copyButton.textContent = '复制'; }, 1500);
+            window.setTimeout(() => { copyButton.textContent = '复制'; }, 1500);
         });
 
         // 自定义主题：编辑 / 保存按钮
@@ -207,7 +207,7 @@ export class ThemeCSSView extends ItemView {
             });
 
             // 自动聚焦
-            setTimeout(() => textarea.focus(), 50);
+            window.setTimeout(() => textarea.focus(), 50);
         } else {
             const preEl = codeWrapper.createEl('pre', { cls: 'mp-theme-css-code' });
             const codeEl = preEl.createEl('code', { cls: 'language-css' });

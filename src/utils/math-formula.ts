@@ -3,6 +3,8 @@
  * 支持 LaTeX 公式的预处理和图片转换
  */
 
+import { sanitizeHTMLToDom } from 'obsidian';
+
 /**
  * 预处理 Markdown 内容，转换 LaTeX 语法为 Obsidian 支持的 $ 语法
  */
@@ -66,7 +68,7 @@ export async function waitForAsyncRender(el: HTMLElement, maxWait = 3000): Promi
 
         if (mathReady && mermaidReady) return;
 
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => window.setTimeout(r, 100));
     }
 }
 
@@ -96,7 +98,7 @@ export async function convertMathToSVG(htmlContent: string, markdown: string): P
             const imgHtml = renderFormulaWithApi(formula.tex, formula.isBlock);
             if (imgHtml) {
                 const placeholder = doc.createElement('span');
-                placeholder.innerHTML = imgHtml;
+                placeholder.appendChild(sanitizeHTMLToDom(imgHtml));
                 container.replaceWith(placeholder.firstChild as Node);
             }
         } catch (e) {

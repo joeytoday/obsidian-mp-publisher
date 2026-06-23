@@ -13,7 +13,7 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
         const internalLinks = element.querySelectorAll('.internal-link');
         internalLinks.forEach(link => {
             const textContent = link.textContent || '';
-            const textNode = document.createTextNode(textContent);
+            const textNode = activeDocument.createTextNode(textContent);
             link.parentNode?.replaceChild(textNode, link);
         });
 
@@ -86,7 +86,7 @@ export function cleanObsidianUIElements(element: HTMLElement): void {
         const checkboxes = element.querySelectorAll('input[type="checkbox"].task-list-item-checkbox');
         checkboxes.forEach(checkbox => {
             const isChecked = (checkbox as HTMLInputElement).checked;
-            const textNode = document.createTextNode(isChecked ? '[x] ' : '[ ] ');
+            const textNode = activeDocument.createTextNode(isChecked ? '[x] ' : '[ ] ');
             checkbox.parentNode?.insertBefore(textNode, checkbox);
             checkbox.remove();
         });

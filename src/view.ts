@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon, MarkdownView } from 'obsidian';
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon, MarkdownView, sanitizeHTMLToDom } from 'obsidian';
 import { MPConverter, markdownToHtml } from './converter';
 import { CopyManager } from './copyManager';
 import type { SettingsManager } from './settings/settings';
@@ -10,7 +10,7 @@ export const VIEW_TYPE_MP = 'mp-preview';
 export class MPView extends ItemView {
     private previewEl: HTMLElement;
     private currentFile: TFile | null = null;
-    private updateTimer: NodeJS.Timeout | null = null;
+    private updateTimer: number | null = null;
     private refreshButton: HTMLButtonElement;
     private copyButton: HTMLButtonElement;
     private themeManager: ThemeManager;
@@ -213,22 +213,22 @@ export class MPView extends ItemView {
                 );
 
                 // 创建临时容器并复制
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = htmlContent;
-                document.body.appendChild(tempDiv);
+                const tempDiv = activeDocument.createElement('div');
+                tempDiv.appendChild(sanitizeHTMLToDom(htmlContent));
+                activeDocument.body.appendChild(tempDiv);
 
                 await CopyManager.copyToClipboard(tempDiv);
-                document.body.removeChild(tempDiv);
+                activeDocument.body.removeChild(tempDiv);
 
                 this.copyButton.setText('复制成功');
 
-                setTimeout(() => {
+                window.setTimeout(() => {
                     this.copyButton.disabled = false;
                     this.copyButton.setText('复制为公众号格式');
                 }, 2000);
-            } catch (error) {
+            } catch (_error) {
                 this.copyButton.setText('复制失败');
-                setTimeout(() => {
+                window.setTimeout(() => {
                     this.copyButton.disabled = false;
                     this.copyButton.setText('复制为公众号格式');
                 }, 2000);
@@ -476,10 +476,10 @@ export class MPView extends ItemView {
     onFileModify(file: TFile): void {
         if (file === this.currentFile) {
             if (this.updateTimer) {
-                clearTimeout(this.updateTimer);
+                window.clearTimeout(this.updateTimer);
             }
 
-            this.updateTimer = setTimeout(() => {
+            this.updateTimer = window.setTimeout(() => {
                 this.updatePreview();
             }, 500);
         }
@@ -514,7 +514,7 @@ export class MPView extends ItemView {
 
         // 根据滚动位置决定是否自动滚动
         if (isAtBottom) {
-            requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
                 this.previewEl.scrollTop = this.previewEl.scrollHeight;
             });
         } else {

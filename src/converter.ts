@@ -1,7 +1,8 @@
-import { App, MarkdownRenderer, Component } from 'obsidian';
+import { App, MarkdownRenderer, Component, sanitizeHTMLToDom } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import type { ThemeManager } from './themeManager';
+import { parseCssString } from './utils/css-props';
 
 export class MPConverter {
     private static app: App;
@@ -12,7 +13,7 @@ export class MPConverter {
 
     static formatContent(element: HTMLElement): void {
         // 创建 section 容器
-        const section = document.createElement('section');
+        const section = activeDocument.createElement('section');
         section.className = 'mp-content-section';
         // 移动原有内容到 section 中
         while (element.firstChild) {
@@ -41,13 +42,13 @@ export class MPConverter {
             const codeEl = pre.querySelector('code');
             if (codeEl) {
                 // 添加 macOS 风格的窗口按钮（使用 section + inline style 确保公众号复制/发布时样式保留）
-                const header = document.createElement('section');
-                header.style.cssText = 'margin-bottom: 1em; display: flex; gap: 6px;';
+                const header = activeDocument.createElement('section');
+                header.setCssProps(parseCssString('margin-bottom: 1em; display: flex; gap: 6px;'));
 
                 const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f'];
                 for (const color of dotColors) {
-                    const dot = document.createElement('section');
-                    dot.style.cssText = `display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${color};`;
+                    const dot = activeDocument.createElement('section');
+                    dot.setCssProps(parseCssString(`display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${color};`));
                     header.appendChild(dot);
                 }
 
@@ -77,7 +78,7 @@ export class MPConverter {
                 const file = this.app.metadataCache.getFirstLinkpathDest(linktext, '');
                 if (file) {
                     const absolutePath = this.app.vault.adapter.getResourcePath(file.path);
-                    const newImg = document.createElement('img');
+                    const newImg = activeDocument.createElement('img');
                     newImg.src = absolutePath;
                     if (alt) newImg.alt = alt;
                     originalSpan.parentNode?.replaceChild(newImg, originalSpan);
@@ -136,15 +137,15 @@ export class MPConverter {
         const isOrdered = listElement.tagName.toLowerCase() === 'ol';
         const listItems = Array.from(listElement.querySelectorAll(':scope > li'));
 
-        const section = document.createElement('section');
+        const section = activeDocument.createElement('section');
         section.className = 'mp-list-section';
         section.setAttribute('data-list-type', isOrdered ? 'ordered' : 'unordered');
         section.setAttribute('data-depth', String(depth));
 
         // 顶层：上边距 + 1em 左间距；嵌套层：固定 1.5em 左间距
-        section.style.cssText = depth === 0
-            ? 'margin: 1em 0 0 0; padding: 0 0 0 1em;'
-            : 'margin: 0; padding: 0 0 0 1.5em;';
+        section.setCssProps(depth === 0
+            ? parseCssString('margin: 1em 0 0 0; padding: 0 0 0 1em;')
+            : parseCssString('margin: 0; padding: 0 0 0 1.5em;'));
 
         let itemNumber = 1;
         for (const li of listItems) {
@@ -155,24 +156,24 @@ export class MPConverter {
             // 先移除所有子列表，防止 innerHTML 重复包含
             childLists.forEach(child => child.remove());
 
-            const itemSection = document.createElement('section');
+            const itemSection = activeDocument.createElement('section');
             itemSection.className = 'mp-list-item';
-            itemSection.style.cssText = 'display: block; margin: 0; line-height: 1.8;';
+            itemSection.setCssProps(parseCssString('display: block; margin: 0; line-height: 1.8;'));
 
             const marker = isOrdered ? `${itemNumber}. ` : '• ';
-            const markerSection = document.createElement('section');
+            const markerSection = activeDocument.createElement('section');
             markerSection.textContent = marker;
-            markerSection.style.cssText = 'display: inline; margin-right: 0.25em; color: #888;';
+            markerSection.setCssProps(parseCssString('display: inline; margin-right: 0.25em; color: #888;'));
             itemSection.appendChild(markerSection);
 
-            const contentSection = document.createElement('section');
-            contentSection.style.cssText = 'display: inline;';
-            contentSection.innerHTML = liElement.innerHTML;
+            const contentSection = activeDocument.createElement('section');
+            contentSection.setCssProps(parseCssString('display: inline;'));
+            while (liElement.firstChild) {
+                contentSection.appendChild(liElement.firstChild);
+            }
 
             contentSection.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).style.display = 'inline';
-                (pEl as HTMLElement).style.margin = '0';
-                (pEl as HTMLElement).style.padding = '0';
+                (pEl as HTMLElement).setCssProps({ display: 'inline', margin: '0', padding: '0' });
             });
 
             itemSection.appendChild(contentSection);
@@ -239,25 +240,25 @@ export class MPConverter {
             const contentHTML = contentEl?.innerHTML || '';
 
             // 构建新的内联样式 HTML 结构
-            const newCallout = document.createElement('section');
+            const newCallout = activeDocument.createElement('section');
             newCallout.className = `mp-callout mp-callout-${calloutType}`;
             newCallout.setAttribute('data-callout', calloutType);
-            newCallout.style.cssText = `background: ${colors.bg}; border-radius: 6px; padding: 12px 16px; margin: 1em 0; box-sizing: border-box;`;
+            newCallout.setCssProps(parseCssString(`background: ${colors.bg}; border-radius: 6px; padding: 12px 16px; margin: 1em 0; box-sizing: border-box;`));
 
             // 标题行
-            const titleRow = document.createElement('section');
+            const titleRow = activeDocument.createElement('section');
             titleRow.className = 'mp-callout-title';
-            titleRow.style.cssText = `display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: bold; color: ${colors.title}; font-size: 1em; line-height: 1.5;`;
+            titleRow.setCssProps(parseCssString(`display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: bold; color: ${colors.title}; font-size: 1em; line-height: 1.5;`));
 
-            const iconSection = document.createElement('section');
+            const iconSection = activeDocument.createElement('section');
             iconSection.className = 'mp-callout-icon';
             iconSection.textContent = colors.icon;
-            iconSection.style.cssText = 'display: inline; font-size: 1.1em;';
+            iconSection.setCssProps(parseCssString('display: inline; font-size: 1.1em;'));
 
-            const titleSection = document.createElement('section');
+            const titleSection = activeDocument.createElement('section');
             titleSection.className = 'mp-callout-title-text';
             titleSection.textContent = titleText;
-            titleSection.style.cssText = 'display: inline;';
+            titleSection.setCssProps(parseCssString('display: inline;'));
 
             titleRow.appendChild(iconSection);
             titleRow.appendChild(titleSection);
@@ -265,14 +266,14 @@ export class MPConverter {
 
             // 内容区域
             if (contentHTML.trim()) {
-                const contentDiv = document.createElement('section');
+                const contentDiv = activeDocument.createElement('section');
                 contentDiv.className = 'mp-callout-content';
-                contentDiv.style.cssText = 'color: #4a4a4a; font-size: 0.95em; line-height: 1.7;';
-                contentDiv.innerHTML = contentHTML;
+                contentDiv.setCssProps(parseCssString('color: #4a4a4a; font-size: 0.95em; line-height: 1.7;'));
+                contentDiv.appendChild(sanitizeHTMLToDom(contentHTML));
 
                 // 给内容中的 p 标签添加内联样式
                 contentDiv.querySelectorAll('p').forEach(paragraph => {
-                    paragraph.style.cssText = 'margin: 4px 0; padding: 0; line-height: 1.7;';
+                    paragraph.setCssProps(parseCssString('margin: 4px 0; padding: 0; line-height: 1.7;'));
                 });
 
                 newCallout.appendChild(contentDiv);
@@ -301,7 +302,7 @@ function applyCodeHighlightStyles(container: HTMLElement): void {
         spans.forEach(span => {
             const computedColor = window.getComputedStyle(span).color;
             if (computedColor) {
-                (span as HTMLElement).style.color = computedColor;
+                (span as HTMLElement).setCssProps({ color: computedColor });
             }
         });
     });
@@ -317,7 +318,7 @@ function convertCodeBlockSpaces(container: HTMLElement): void {
     const NBSP = '\u00A0';
 
     container.querySelectorAll('pre code').forEach(codeEl => {
-        const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+        const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
         let node: Text | null;
         while ((node = walker.nextNode() as Text | null)) {
@@ -349,12 +350,9 @@ export async function markdownToHtml(
     themeManager?: ThemeManager,
     convertMathToSVG: boolean = false,
 ): Promise<string> {
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'fixed';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '0';
-    tempDiv.style.width = '1000px';
-    document.body.appendChild(tempDiv);
+    const tempDiv = activeDocument.createElement('div');
+    tempDiv.setCssProps({ position: 'fixed', left: '-9999px', top: '0', width: '1000px' });
+    activeDocument.body.appendChild(tempDiv);
 
     const renderComponent = new Component();
     renderComponent.load();
@@ -398,7 +396,7 @@ export async function markdownToHtml(
 
         // 序列化 HTML
         const serializer = new XMLSerializer();
-        const cleanContainer = document.createElement('div');
+        const cleanContainer = activeDocument.createElement('div');
         while (tempDiv.firstChild) {
             cleanContainer.appendChild(tempDiv.firstChild);
         }
@@ -439,7 +437,7 @@ export async function markdownToHtml(
     } finally {
         renderComponent.unload();
         if (tempDiv.parentNode) {
-            document.body.removeChild(tempDiv);
+            activeDocument.body.removeChild(tempDiv);
         }
     }
 }
@@ -460,10 +458,10 @@ async function convertMermaidSVGToImage(container: HTMLElement): Promise<void> {
             const dataUrl = await svgToDataUrl(svgElement);
             if (!dataUrl) continue;
 
-            const img = document.createElement('img');
+            const img = activeDocument.createElement('img');
             img.src = dataUrl;
             img.alt = 'mermaid diagram';
-            img.style.cssText = 'display: block; max-width: 100%; margin: 1em auto; border-radius: 0;';
+            img.setCssProps(parseCssString('display: block; max-width: 100%; margin: 1em auto; border-radius: 0;'));
 
             mermaidEl.parentNode?.replaceChild(img, mermaidEl);
         } catch (error) {
@@ -511,7 +509,7 @@ function svgToDataUrl(svgElement: SVGElement): Promise<string | null> {
             if (!height) height = 600;
 
             const scale = 2;
-            const canvas = document.createElement('canvas');
+            const canvas = activeDocument.createElement('canvas');
             canvas.width = width * scale;
             canvas.height = height * scale;
 

@@ -1,8 +1,9 @@
-import { App, Notice, requestUrl, TFile } from 'obsidian';
+import { App, Notice, requestUrl, TFile, sanitizeHTMLToDom } from 'obsidian';
 import MPPlugin from '../main';
 import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
+import { parseCssString } from '../utils/css-props';
 
 // 微信素材类型接口
 interface WechatMaterial {
@@ -150,7 +151,7 @@ export class WechatPublisher {
                 if (attempt > 0) {
                     const delay = initialDelay * Math.pow(2, attempt - 1);
                     this.logger.warn(`获取令牌尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => window.setTimeout(resolve, delay));
                 }
 
                 this.logger.debug(`开始获取微信访问令牌${forceRefresh ? ' (强制刷新)' : ''}`);
@@ -234,7 +235,7 @@ export class WechatPublisher {
     ): Promise<{ url: string; media_id: string } | null> {
         try {
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substring(2);
-            const blob = new Blob([imageData]);
+            new Blob([imageData]);
 
             const formDataHeader = `--${boundary}\r\nContent-Disposition: form-data; name="media"; filename="${fileName}"\r\nContent-Type: image/jpeg\r\n\r\n`;
             const formDataFooter = `\r\n--${boundary}--`;
@@ -296,9 +297,9 @@ export class WechatPublisher {
             // 获取或创建元数据（存储在插件 data.json 中，不再生成文件系统上的文件夹）
             const metadata = getOrCreateMetadata(this.plugin, file);
 
-            // 使用 innerHTML 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
+            // 使用 sanitizeHTMLToDom 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
+            const tempDiv = activeDocument.createElement('div');
+            tempDiv.appendChild(sanitizeHTMLToDom(content));
 
             // 处理列表（清理空项、空段落、添加 margin: 0）
             this.processLists(tempDiv);
@@ -350,9 +351,7 @@ export class WechatPublisher {
         container.querySelectorAll('.mp-list-item').forEach(item => {
             const el = item as HTMLElement;
             el.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).style.display = 'inline';
-                (pEl as HTMLElement).style.margin = '0';
-                (pEl as HTMLElement).style.padding = '0';
+                (pEl as HTMLElement).setCssProps({ display: 'inline', margin: '0', padding: '0' });
             });
         });
     }
@@ -366,24 +365,26 @@ export class WechatPublisher {
      * 避免微信 API 将行内代码渲染为独立的代码块
      */
     private convertCodeBlockNewlines(html: string): string {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
+        const tempDiv = activeDocument.createElement('div');
+        tempDiv.appendChild(sanitizeHTMLToDom(html));
 
         // 将 <pre> 外的 <code>（行内代码）转为 <span> + 内联样式
         // 微信 API 会把所有 <code> 标签当成代码块渲染
         tempDiv.querySelectorAll('code').forEach(codeEl => {
             if (codeEl.closest('pre')) return;
 
-            const span = document.createElement('span');
+            const span = activeDocument.createElement('span');
             const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
             span.setAttribute('style', existingStyle);
-            span.innerHTML = codeEl.innerHTML;
+            while (codeEl.firstChild) {
+                span.appendChild(codeEl.firstChild);
+            }
             codeEl.parentNode?.replaceChild(span, codeEl);
         });
 
         // 处理代码块中的换行符
         tempDiv.querySelectorAll('pre code').forEach(codeEl => {
-            const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+            const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
             const textNodes: Text[] = [];
             let node: Text | null;
             while ((node = walker.nextNode() as Text | null)) {
@@ -395,13 +396,13 @@ export class WechatPublisher {
                 if (!text.includes('\n')) continue;
 
                 const parts = text.split('\n');
-                const fragment = document.createDocumentFragment();
+                const fragment = activeDocument.createDocumentFragment();
                 parts.forEach((part, index) => {
                     if (index > 0) {
-                        fragment.appendChild(document.createElement('br'));
+                        fragment.appendChild(activeDocument.createElement('br'));
                     }
                     if (part) {
-                        fragment.appendChild(document.createTextNode(part));
+                        fragment.appendChild(activeDocument.createTextNode(part));
                     }
                 });
                 textNode.parentNode?.replaceChild(fragment, textNode);
@@ -455,7 +456,7 @@ export class WechatPublisher {
                 if (!imageMetadata) {
                     this.logger.debug(`fetch 本地图片: ${imagePath}`);
                     try {
-                        // eslint-disable-next-line no-restricted-globals
+                        // eslint-disable-next-line no-restricted-globals -- fetch is required for local images, requestUrl does not support app:// protocol
                         const response = await fetch(imagePath);
                         if (!response.ok) {
                             this.logger.error(`fetch 本地图片失败: ${imagePath}, status: ${response.status}`);
@@ -574,9 +575,9 @@ export class WechatPublisher {
             // 获取进度指示器
             const progress = getProgressIndicator(this.app);
             
-            // 使用 innerHTML 统计图片数量，避免 DOMParser 破坏已内联的样式结构
-            const countDiv = document.createElement('div');
-            countDiv.innerHTML = content;
+            // 使用 sanitizeHTMLToDom 统计图片数量，避免 DOMParser 破坏已内联的样式结构
+            const countDiv = activeDocument.createElement('div');
+            countDiv.appendChild(sanitizeHTMLToDom(content));
             const imageCount = countDiv.querySelectorAll('img').length;
             
             // 显示进度指示器（图片数量 + 1 个发布步骤）
@@ -584,12 +585,10 @@ export class WechatPublisher {
             progress.show(totalSteps, '正在发布到微信公众号...');
             
             // 处理文档中的图片（上传到微信并替换 src）
-            let processedCount = 0;
             let processedContent = await this.processDocumentImages(
                 content, 
                 file, 
                 (current, total, imageName) => {
-                    processedCount = current;
                     progress.updateProgress(
                         current, 
                         totalSteps, 
@@ -733,7 +732,7 @@ export class WechatPublisher {
                 if (attempt > 0) {
                     const delay = initialDelay * Math.pow(2, attempt - 1);
                     this.logger.warn(`请求尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => window.setTimeout(resolve, delay));
                 }
 
                 const accessToken = await this.getAccessToken(false, accountId);

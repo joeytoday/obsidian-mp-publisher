@@ -83,7 +83,7 @@ export class ThemePreviewView extends ItemView {
         container.classList.add('mp-theme-preview-container');
 
         // Obsidian 内部 API，无公开类型定义
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- leaf.updateHeader is an internal API with no public type
         (this.leaf as any).updateHeader?.();
 
         await this.renderPreview(container);

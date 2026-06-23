@@ -1,4 +1,4 @@
-import { App, MarkdownView, Modal, Notice, Setting, TFile } from 'obsidian';
+import { App, MarkdownView, Modal, Notice, Setting } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
 // 封面图选择模态框
@@ -383,7 +383,7 @@ export class PublishModal extends Modal {
 			.setName('标题')
 			.setDesc('文章标题');
 
-		this.titleInput = document.createElement('input');
+		this.titleInput = activeDocument.createElement('input');
 		this.titleInput.type = 'text';
 		this.titleInput.value = this.markdownView.file?.basename || '';
 		this.titleInput.className = 'full-width-input';
@@ -395,10 +395,10 @@ export class PublishModal extends Modal {
 			.setName('平台')
 			.setDesc('目前只支持微信公众号');
 
-		this.platformSelect = document.createElement('select');
+		this.platformSelect = activeDocument.createElement('select');
 		this.platformSelect.className = 'enhanced-publisher-platform-selector';
 
-		const wechatOption = document.createElement('option');
+		const wechatOption = activeDocument.createElement('option');
 		wechatOption.value = 'wechat';
 		wechatOption.text = '微信公众号';
 		this.platformSelect.appendChild(wechatOption);
@@ -413,18 +413,18 @@ export class PublishModal extends Modal {
 			.setName('公众号')
 			.setDesc('选择要发布到的公众号');
 
-		this.accountSelect = document.createElement('select');
+		this.accountSelect = activeDocument.createElement('select');
 		this.accountSelect.className = 'enhanced-publisher-platform-selector';
 
 		if (accounts.length === 0) {
-			const emptyOption = document.createElement('option');
+			const emptyOption = activeDocument.createElement('option');
 			emptyOption.value = '';
 			emptyOption.text = '请先在设置中添加公众号';
 			this.accountSelect.appendChild(emptyOption);
 			this.accountSelect.disabled = true;
 		} else {
 			for (const account of accounts) {
-				const option = document.createElement('option');
+				const option = activeDocument.createElement('option');
 				option.value = account.id;
 				option.text = account.name || `公众号 (${account.appId.slice(0, 6)}...)`;
 				if (account.id === activeAccountId) {
@@ -441,7 +441,7 @@ export class PublishModal extends Modal {
 			.setName('草稿')
 			.setDesc('当前仅支持保存到草稿箱，后续将支持直接发布');
 
-		const draftCheckbox = document.createElement('input');
+		const draftCheckbox = activeDocument.createElement('input');
 		draftCheckbox.type = 'checkbox';
 		draftCheckbox.checked = true;
 		draftCheckbox.disabled = true;
@@ -453,16 +453,16 @@ export class PublishModal extends Modal {
 			.setDesc('选择文章封面图');
 
 		// 创建封面图选择区域的容器
-		const coverImageContainer = document.createElement('div');
+		const coverImageContainer = activeDocument.createElement('div');
 		coverImageContainer.className = 'cover-container';
 
 		// 封面图预览区域
-		this.coverImagePreview = document.createElement('div');
+		this.coverImagePreview = activeDocument.createElement('div');
 		this.coverImagePreview.className = 'cover-preview';
 		this.coverImagePreview.textContent = '无封面图';
 
 		// 选择按钮
-		const selectCoverButton = document.createElement('button');
+		const selectCoverButton = activeDocument.createElement('button');
 		selectCoverButton.className = 'mod-cta';
 		selectCoverButton.textContent = '选择封面图';
 		selectCoverButton.addEventListener('click', () => {
@@ -473,7 +473,7 @@ export class PublishModal extends Modal {
 
 				// 更新预览区域
 				this.coverImagePreview.empty();
-				const img = document.createElement('img') as HTMLImageElement;
+				const img = activeDocument.createElement('img') as HTMLImageElement;
 				img.className = 'preview-image';
 
 				// 从sessionStorage获取选中的素材信息

@@ -1,4 +1,5 @@
-import { Notice, requestUrl } from 'obsidian';
+import { Notice, requestUrl, sanitizeHTMLToDom } from 'obsidian';
+import { parseCssString } from './utils/css-props';
 
 export class CopyManager {
     /**
@@ -64,9 +65,7 @@ export class CopyManager {
             // 不强制覆盖 padding-left，converter 已根据层级正确设置
             // 确保列表项内部的 p 标签保持内联，防止 juice 内联后被覆盖
             el.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).style.display = 'inline';
-                (pEl as HTMLElement).style.margin = '0';
-                (pEl as HTMLElement).style.padding = '0';
+                (pEl as HTMLElement).setCssProps({ display: 'inline', margin: '0', padding: '0' });
             });
         });
     }
@@ -97,7 +96,7 @@ export class CopyManager {
                 if (!targetSpan) return;
                 const color = window.getComputedStyle(sourceSpan).color;
                 if (color) {
-                    targetSpan.style.color = color;
+                    targetSpan.setCssProps({ color: color });
                 }
             });
         });
@@ -122,7 +121,7 @@ export class CopyManager {
                     blob = new Blob([response.arrayBuffer], { type: contentType });
                 } else {
                     // 本地图片（app:// 等协议）：Electron 环境原生支持，requestUrl 不支持 app:// 协议
-                    // eslint-disable-next-line no-restricted-globals
+                    // eslint-disable-next-line no-restricted-globals -- fetch is required for app:// local images, requestUrl does not support app:// protocol
                     const response = await fetch(img.src);
                     blob = await response.blob();
                 }
@@ -181,8 +180,8 @@ export class CopyManager {
 
         // 5. 补全 Obsidian 内置的代码高亮样式（不在主题 CSS 中，juice 无法内联）
         //    从原始预览 DOM 读取 computed style，写入克隆体的 inline style
-        const tempContainer = document.createElement('div');
-        tempContainer.innerHTML = inlinedHtml;
+        const tempContainer = activeDocument.createElement('div');
+        tempContainer.appendChild(sanitizeHTMLToDom(inlinedHtml));
         this.applyComputedStylesToCodeBlocks(previewElement, tempContainer);
 
         // 6. 清理多余属性（data-*、id、class）

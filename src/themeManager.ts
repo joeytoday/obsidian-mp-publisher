@@ -163,11 +163,9 @@ export class ThemeManager {
         const scopedThemeCSS = scopeId ? this.scopeCSS(targetTheme.css, scopeId) : targetTheme.css;
         const finalCSS = scopedThemeCSS + '\n' + fontOverrideCSS;
 
-        // 注入新的样式标签
-        const styleElement = document.createElement('style');
-        styleElement.setAttribute('data-mp-theme', targetTheme.id);
+        // 注入新的样式标签（使用 createEl 符合 Obsidian DOM 创建规范）
+        const styleElement = element.createEl('style', { attr: { 'data-mp-theme': targetTheme.id } });
         styleElement.textContent = finalCSS;
-        element.insertBefore(styleElement, element.firstChild);
     }
 
     /** 给 CSS 选择器加上作用域前缀，防止跨视图污染 */
