@@ -308,52 +308,31 @@ function applyCodeHighlightStyles(container: HTMLElement): void {
 }
 
 /**
- * 将代码块中行首的普通空格（U+0020）替换为不间断空格（U+00A0）
- * 微信公众号富文本引擎不支持 CSS white-space: pre-wrap，普通空格会被折叠导致缩进丢失
- * U+00A0（不间断空格）在公众号中不会被折叠，能正确保留代码缩进
+ * 将代码块中所有普通空格（U+0020）替换为不间断空格（U+00A0）
+ * 微信公众号富文本引擎不支持 CSS white-space: pre-wrap，会折叠所有连续普通空格
+ * 不仅行首缩进空格会丢失，行内的对齐空格、key-value 之间的空格也会被折叠
+ * U+00A0（不间断空格）在公众号中不会被折叠，能正确保留所有代码空格
  */
-function convertCodeBlockLeadingSpaces(container: HTMLElement): void {
-    const NBSP = String.fromCharCode(160);
-    const NL = String.fromCharCode(10);
+function convertCodeBlockSpaces(container: HTMLElement): void {
+    const NBSP = '\u00A0';
 
     container.querySelectorAll('pre code').forEach(codeEl => {
-        // 使用 TreeWalker 一次性收集所有文本节点，避免重复或遗漏
         const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
         let node: Text | null;
         while ((node = walker.nextNode() as Text | null)) {
-            const text = node.textContent || '';
+            textNodes.push(node);
+        }
+
+        for (const textNode of textNodes) {
+            const text = textNode.textContent || '';
             if (!text.length) continue;
 
-            const hasNewline = text.indexOf(NL) !== -1;
-
-            if (hasNewline) {
-                const parts = text.split(NL);
-                const fragment = document.createDocumentFragment();
-                parts.forEach((part, idx) => {
-                    if (idx > 0) {
-                        fragment.appendChild(document.createTextNode(NL));
-                    }
-                    const leadingMatch = part.match(/^[ \t]+/);
-                    const leadingSpaces = leadingMatch ? leadingMatch[0].length : 0;
-                    const rest = leadingMatch ? part.slice(leadingSpaces) : part;
-                    let converted = rest;
-                    for (let j = 0; j < leadingSpaces; j++) {
-                        converted = NBSP + converted;
-                    }
-                    fragment.appendChild(document.createTextNode(converted));
-                });
-                node.parentNode?.replaceChild(fragment, node);
-            } else {
-                const leadingMatch = text.match(/^[ \t]+/);
-                const leadingSpaces = leadingMatch ? leadingMatch[0].length : 0;
-                if (leadingSpaces > 0) {
-                    const rest = text.slice(leadingSpaces);
-                    let converted = rest;
-                    for (let j = 0; j < leadingSpaces; j++) {
-                        converted = NBSP + converted;
-                    }
-                    node.textContent = converted;
-                }
+            // 将所有普通空格 U+0020 替换为不间断空格 U+00A0
+            // 换行符 \n 保持不变，确保代码块换行正确
+            const converted = text.replace(/ /g, NBSP);
+            if (converted !== text) {
+                textNode.textContent = converted;
             }
         }
     });
@@ -410,9 +389,9 @@ export async function markdownToHtml(
         // juice 无法内联，需要在 DOM 还挂载时读取 computed style 补全
         applyCodeHighlightStyles(tempDiv);
 
-        // 将代码块行首空格替换为 U+00A0（不间断空格）
-        // 微信公众号不支持 CSS white-space: pre-wrap，普通空格会被折叠导致缩进丢失
-        convertCodeBlockLeadingSpaces(tempDiv);
+        // 将代码块所有空格替换为 U+00A0（不间断空格）
+        // 微信公众号不支持 CSS white-space: pre-wrap，所有普通空格会被折叠
+        convertCodeBlockSpaces(tempDiv);
 
         // 移除定位样式
         tempDiv.removeAttribute('style');
