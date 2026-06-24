@@ -1,12 +1,12 @@
 # Changelog
 
-## [2.6.2] - 2026-06-24
+## [2.6.1] - 2026-06-24
 
 ### 🔧 代码规范
 
-- 最低支持版本提升至 1.13.0（覆盖 `getLeaf('split')` 等 API 要求）
-- 使用 Obsidian 规范 API：`setCssProps` 替代 `setAttribute('style')`、`RequestUrlResponse` 替代 `any` 类型
-- 移除不允许的 eslint-disable 注释：`no-restricted-globals` → `window.fetch`，`no-explicit-any` → 精确类型
+- 最低支持版本提升至 1.13.0
+- 使用 Obsidian 规范 API：`setCssProps` 替代直接 style 赋值、`sanitizeHTMLToDom` 替代 innerHTML、`activeDocument` 替代 `document`、`window.setTimeout` 替代 `setTimeout`、`RequestUrlResponse` 替代 `any` 类型
+- 移除不允许的 eslint-disable 注释，用 `window.fetch` 替代全局 `fetch`、用精确类型替代 `any`
 - 定义 `LeafWithUpdateHeader` 接口替代 `as any` 访问内部 API
 - async 回调改为 `void (async () => { ... })()` 模式，避免 Promise 未处理
 - 移除 await 非 Promise 的调用
@@ -23,16 +23,6 @@
 ### 🎨 优化
 
 - 列表处理逻辑统一为共享函数，复制和发布流程保持一致
-
----
-
-## [2.6.1] - 2026-06-23
-
-### 🔧 代码规范
-
-- 修复 Obsidian 插件 review 要求的所有 Error 级别问题
-- 最低支持版本提升至 1.7.2（覆盖 revealLeaf 等 API 要求）
-- 使用 Obsidian 规范 API：`setCssProps` 替代直接 style 赋值、`sanitizeHTMLToDom` 替代 innerHTML、`activeDocument` 替代 `document`、`window.setTimeout` 替代 `setTimeout`
 
 ---
 

@@ -1,7 +1,7 @@
 {
 	"id": "mp-publisher",
 	"name": "MP Publisher",
-	"version": "2.6.2",
+	"version": "2.6.1",
 	"minAppVersion": "1.13.0",
 	"description": "Preview with custom CSS themes and publish articles to WeChat Official Accounts with one click.",
 	"author": "joeytoday",
