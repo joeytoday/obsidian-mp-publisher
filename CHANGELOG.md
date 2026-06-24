@@ -4,6 +4,7 @@
 
 ### 🔧 代码规范
 
+- 最低支持版本调整为 1.12.0（Obsidian 1.13 尚未发布）
 - 微信 API 响应定义精确接口类型，替代 `any` 直接访问
 - `JSON.parse` 结果添加类型标注（素材缓存、Token 缓存、sessionStorage 数据）
 - `catch (error)` 改为 `catch (error: unknown)`，用 `instanceof Error` 替代直接访问属性
