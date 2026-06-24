@@ -2,6 +2,11 @@ import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
 import type { ThemeManager } from './themeManager';
 import { ThemeSource } from './types/css-theme';
 
+/** WorkspaceLeaf internal API that includes updateHeader for refreshing view headers */
+interface LeafWithUpdateHeader extends WorkspaceLeaf {
+    updateHeader?: () => void;
+}
+
 export const VIEW_TYPE_THEME_CSS = 'mp-theme-css';
 
 /**
@@ -50,9 +55,8 @@ export class ThemeCSSView extends ItemView {
         container.classList.add('mp-theme-css-container');
         this.renderCSS(container);
 
-        // Obsidian 内部 API，无公开类型定义
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- leaf.updateHeader is an internal API with no public type
-        (this.leaf as any).updateHeader?.();
+        // Obsidian 内部 API，leaf.updateHeader refreshes the view tab header
+        (this.leaf as LeafWithUpdateHeader).updateHeader?.();
     }
 
     async onOpen(): Promise<void> {
@@ -109,13 +113,15 @@ export class ThemeCSSView extends ItemView {
             cls: 'mp-theme-css-text-btn',
         });
 
-        copyButton.addEventListener('click', async () => {
-            const cssContent = this.isEditing
-                ? (container.querySelector('.mp-theme-css-editor') as HTMLTextAreaElement)?.value || theme.css
-                : theme.css;
-            await navigator.clipboard.writeText(cssContent);
-            copyButton.textContent = '已复制';
-            window.setTimeout(() => { copyButton.textContent = '复制'; }, 1500);
+        copyButton.addEventListener('click', () => {
+            void (async () => {
+                const cssContent = this.isEditing
+                    ? (container.querySelector('.mp-theme-css-editor') as HTMLTextAreaElement)?.value || theme.css
+                    : theme.css;
+                await navigator.clipboard.writeText(cssContent);
+                copyButton.textContent = '已复制';
+                window.setTimeout(() => { copyButton.textContent = '复制'; }, 1500);
+            })();
         });
 
         // 自定义主题：编辑 / 保存按钮
@@ -126,45 +132,47 @@ export class ThemeCSSView extends ItemView {
                     cls: 'mp-theme-css-text-btn mp-theme-css-save-btn',
                 });
 
-                saveButton.addEventListener('click', async () => {
-                    const textarea = container.querySelector('.mp-theme-css-editor') as HTMLTextAreaElement;
-                    if (!textarea) return;
+                saveButton.addEventListener('click', () => {
+                    void (async () => {
+                        const textarea = container.querySelector('.mp-theme-css-editor') as HTMLTextAreaElement;
+                        if (!textarea) return;
 
-                    const newCSS = textarea.value.trim();
-                    if (!newCSS) {
-                        new Notice('CSS 内容不能为空');
-                        return;
-                    }
-
-                    const newName = nameInput?.value.trim() || theme.name;
-                    if (!/^[a-zA-Z0-9\-_\u4e00-\u9fff]+$/.test(newName)) {
-                        new Notice('名称只能包含字母、数字、连字符、下划线和中文');
-                        return;
-                    }
-
-                    try {
-                        let currentThemeId = theme.id;
-
-                        if (newName !== theme.name) {
-                            const success = await this.themeManager.renameLocalTheme(theme.id, newName);
-                            if (!success) {
-                                new Notice('重命名失败，名称可能已存在');
-                                return;
-                            }
-                            currentThemeId = `local-${newName}`;
-                            this.themeId = currentThemeId;
-                            this.themeName = newName;
+                        const newCSS = textarea.value.trim();
+                        if (!newCSS) {
+                            new Notice('CSS 内容不能为空');
+                            return;
                         }
 
-                        await this.themeManager.updateLocalTheme(currentThemeId, newCSS);
-                        this.isEditing = false;
-                        this.editedCSS = '';
-                        new Notice(`已保存「${newName}」`);
-                        (this.leaf as any).updateHeader?.();
-                        this.renderCSS(container);
-                    } catch (error) {
-                        new Notice('保存失败: ' + (error as Error).message);
-                    }
+                        const newName = nameInput?.value.trim() || theme.name;
+                        if (!/^[a-zA-Z0-9\-_\u4e00-\u9fff]+$/.test(newName)) {
+                            new Notice('名称只能包含字母、数字、连字符、下划线和中文');
+                            return;
+                        }
+
+                        try {
+                            let currentThemeId = theme.id;
+
+                            if (newName !== theme.name) {
+                                const success = await this.themeManager.renameLocalTheme(theme.id, newName);
+                                if (!success) {
+                                    new Notice('重命名失败，名称可能已存在');
+                                    return;
+                                }
+                                currentThemeId = `local-${newName}`;
+                                this.themeId = currentThemeId;
+                                this.themeName = newName;
+                            }
+
+                            await this.themeManager.updateLocalTheme(currentThemeId, newCSS);
+                            this.isEditing = false;
+                            this.editedCSS = '';
+                            new Notice(`已保存「${newName}」`);
+                            (this.leaf as LeafWithUpdateHeader).updateHeader?.();
+                            this.renderCSS(container);
+                        } catch (error) {
+                            new Notice('保存失败: ' + (error as Error).message);
+                        }
+                    })();
                 });
             } else {
                 const editButton = toolbarActions.createEl('button', {

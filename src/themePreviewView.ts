@@ -2,6 +2,11 @@ import { ItemView, WorkspaceLeaf, MarkdownRenderer, Component } from 'obsidian';
 import { MPConverter } from './converter';
 import type { ThemeManager } from './themeManager';
 
+/** WorkspaceLeaf internal API that includes updateHeader for refreshing view headers */
+interface LeafWithUpdateHeader extends WorkspaceLeaf {
+    updateHeader?: () => void;
+}
+
 export const VIEW_TYPE_THEME_PREVIEW = 'mp-theme-preview';
 
 const SAMPLE_MARKDOWN = `# 标题示例
@@ -82,9 +87,8 @@ export class ThemePreviewView extends ItemView {
         container.empty();
         container.classList.add('mp-theme-preview-container');
 
-        // Obsidian 内部 API，无公开类型定义
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- leaf.updateHeader is an internal API with no public type
-        (this.leaf as any).updateHeader?.();
+        // Obsidian 内部 API，leaf.updateHeader refreshes the view tab header
+        (this.leaf as LeafWithUpdateHeader).updateHeader?.();
 
         await this.renderPreview(container);
     }

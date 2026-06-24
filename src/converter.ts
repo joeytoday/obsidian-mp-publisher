@@ -307,16 +307,23 @@ function applyCodeHighlightStyles(container: HTMLElement): void {
         });
     });
 }
-
 /**
- * 将代码块中所有普通空格（U+0020）替换为不间断空格（U+00A0）
- * 微信公众号富文本引擎不支持 CSS white-space: pre-wrap，会折叠所有连续普通空格
- * 不仅行首缩进空格会丢失，行内的对齐空格、key-value 之间的空格也会被折叠
- * U+00A0（不间断空格）在公众号中不会被折叠，能正确保留所有代码空格
+ * 将代码块每行包裹在 section 中，用 padding-left 实现缩进
+ * 同时将行内空格替换为 NBSP（U+00A0）
+ * 
+ * 微信公众号保存时会移除 white-space: pre-wrap 并折叠空格（包括 NBSP）
+ * 仅靠空格字符无法可靠保留缩进，必须用 CSS padding-left 作为缩进载体
+ * 
+ * 策略：
+ * 1. 先将所有普通空格替换为 NBSP（保护行内间距）
+ * 2. 在 DOM 层面按换行符拆分文本节点，识别行首 NBSP 数量
+ * 3. 每行用 section 包裹，padding-left = 行首 NBSP 数量 × 0.5em
+ * 4. 移除行首 NBSP（由 padding-left 替代），保留行内 NBSP 和语法高亮 span
  */
-function convertCodeBlockSpaces(container: HTMLElement): void {
+function convertCodeBlockLines(container: HTMLElement): void {
     const NBSP = '\u00A0';
 
+    // Step 1: 将代码块内所有普通空格替换为 NBSP
     container.querySelectorAll('pre code').forEach(codeEl => {
         const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
         const textNodes: Text[] = [];
@@ -328,17 +335,161 @@ function convertCodeBlockSpaces(container: HTMLElement): void {
         for (const textNode of textNodes) {
             const text = textNode.textContent || '';
             if (!text.length) continue;
-
-            // 将所有普通空格 U+0020 替换为不间断空格 U+00A0
-            // 换行符 \n 保持不变，确保代码块换行正确
             const converted = text.replace(/ /g, NBSP);
             if (converted !== text) {
                 textNode.textContent = converted;
             }
         }
     });
-}
 
+    // Step 2: 按行拆分代码块，每行用 section + padding-left 实现缩进
+    // 在 DOM 层面操作，保留语法高亮 span 结构
+    container.querySelectorAll('pre code').forEach(codeEl => {
+        // 2a: 先将所有含 \n 的文本节点按换行拆分
+        //     确保每个文本节点只属于一行
+        const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
+        let node: Text | null;
+        while ((node = walker.nextNode() as Text | null)) {
+            textNodes.push(node);
+        }
+
+        for (const textNode of textNodes) {
+            const text = textNode.textContent || '';
+            if (!text.includes('\n')) continue;
+
+            const parts = text.split('\n');
+            const fragment = activeDocument.createDocumentFragment();
+            parts.forEach((part, idx) => {
+                if (idx > 0) {
+                    fragment.appendChild(activeDocument.createTextNode('\n'));
+                }
+                if (part.length > 0) {
+                    fragment.appendChild(activeDocument.createTextNode(part));
+                }
+            });
+            textNode.parentNode?.replaceChild(fragment, textNode);
+        }
+
+        // 2b: 将 code 的子节点按 \n 文本节点拆分为行组
+        //     每个行组包含该行的所有元素（span、文本节点等）
+        const childNodes = Array.from(codeEl.childNodes);
+        const lineGroups: Node[][] = [[]];
+        
+        for (const child of childNodes) {
+            // 检查是否是换行文本节点
+            if (child.nodeType === Node.TEXT_NODE && child.textContent === '\n') {
+                lineGroups.push([]); // 开始新行
+            } else {
+                lineGroups[lineGroups.length - 1].push(child);
+            }
+        }
+
+        // 过滤掉空行组（连续换行产生的）
+        const nonEmptyGroups = lineGroups.filter(group => group.length > 0);
+
+        if (nonEmptyGroups.length <= 1) return; // 单行代码块无需处理
+
+        // 2c: 为每行计算行首 NBSP 数量，移除行首 NBSP，设置 padding-left
+        const lineSections: HTMLElement[] = [];
+
+        for (const group of nonEmptyGroups) {
+            // 计算行首 NBSP 数量：遍历行组中的文本节点，统计连续的行首 NBSP
+            let leadingNbspCount = 0;
+
+            for (const child of group) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    const text = child.textContent || '';
+                    for (const char of text) {
+                        if (char === NBSP) {
+                            leadingNbspCount++;
+                        } else {
+                            break; // 遇到非 NBSP 字符，停止计数
+                        }
+                    }
+                    if (leadingNbspCount > 0 && text.length === leadingNbspCount) {
+                        // 整个文本节点都是行首 NBSP，继续看下一个节点
+                        continue;
+                    }
+                    break; // 文本节点包含非 NBSP 内容，行首部分结束
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    // span 元素：检查其第一个文本子节点
+                    const firstText = (child as HTMLElement).textContent || '';
+                    for (const char of firstText) {
+                        if (char === NBSP) {
+                            leadingNbspCount++;
+                        } else {
+                            break;
+                        }
+                    }
+                    break; // span 元素后不再属于行首
+                } else {
+                    break;
+                }
+            }
+
+            // 2d: 移除行首 NBSP
+            let removedCount = 0;
+            for (const child of group) {
+                if (removedCount >= leadingNbspCount) break;
+
+                if (child.nodeType === Node.TEXT_NODE) {
+                    const text = child.textContent || '';
+                    const remaining = leadingNbspCount - removedCount;
+                    const nbspInNode = text.length <= remaining ? text.length : remaining;
+
+                    if (nbspInNode === text.length) {
+                        // 整个文本节点都是行首 NBSP，移除
+                        child.textContent = '';
+                        removedCount += text.length;
+                    } else {
+                        // 部分是行首 NBSP，截取移除
+                        child.textContent = text.slice(nbspInNode);
+                        removedCount += nbspInNode;
+                    }
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    const el = child as HTMLElement;
+                    const firstTextChild = el.childNodes[0];
+                    if (firstTextChild && firstTextChild.nodeType === Node.TEXT_NODE) {
+                        const text = firstTextChild.textContent || '';
+                        const remaining = leadingNbspCount - removedCount;
+                        const nbspInNode = text.length <= remaining ? text.length : remaining;
+
+                        if (nbspInNode === text.length) {
+                            firstTextChild.textContent = '';
+                        } else {
+                            firstTextChild.textContent = text.slice(nbspInNode);
+                        }
+                        removedCount += nbspInNode;
+                    }
+                    break;
+                } else {
+                    break;
+                }
+            }
+
+            // 2e: 创建 section 包裹该行
+            const section = activeDocument.createElement('section');
+            section.setCssProps(parseCssString(
+                `display: block; margin: 0; padding: 0; padding-left: ${leadingNbspCount * 0.5}em; line-height: 1.6;`
+            ));
+
+            for (const child of group) {
+                // 移除空文本节点（行首 NBSP 被清空后产生的）
+                if (child.nodeType === Node.TEXT_NODE && !child.textContent?.length) continue;
+                section.appendChild(child);
+            }
+
+            lineSections.push(section);
+        }
+
+        // 2f: 用 section 行替换 code 内容
+        codeEl.empty();
+        lineSections.forEach(section => {
+            codeEl.appendChild(section);
+        });
+    });
+}
 /**
  * 将 Markdown 转换为带主题样式的 HTML（用于发布）
  * 使用 juice 将 CSS 内联到 HTML 元素的 style 属性中
@@ -387,9 +538,10 @@ export async function markdownToHtml(
         // juice 无法内联，需要在 DOM 还挂载时读取 computed style 补全
         applyCodeHighlightStyles(tempDiv);
 
-        // 将代码块所有空格替换为 U+00A0（不间断空格）
-        // 微信公众号不支持 CSS white-space: pre-wrap，所有普通空格会被折叠
-        convertCodeBlockSpaces(tempDiv);
+        // 将代码块按行拆分，每行用 section + padding-left 实现缩进
+        // 微信公众号保存后会移除 white-space: pre-wrap 并折叠空格（包括 NBSP）
+        // 仅靠空格字符不可靠，必须用 CSS padding-left 作为缩进载体
+        convertCodeBlockLines(tempDiv);
 
         // 移除定位样式
         tempDiv.removeAttribute('style');

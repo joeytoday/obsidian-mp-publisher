@@ -118,12 +118,12 @@ function extractFormulas(markdown: string): Array<{ tex: string; isBlock: boolea
     let protectedMd = markdown.replace(/```[\s\S]*?```|`[^`\n]*?`/g, m => ' '.repeat(m.length));
 
     let match: RegExpExecArray | null;
-    const blockRegex = /\$\$([\s\S]+?)\$\$/g;
+    const blockRegex = /$$([\s\S]+?)$$/g;
     while ((match = blockRegex.exec(protectedMd)) !== null) {
         formulas.push({ tex: match[1].trim(), isBlock: true, pos: match.index });
     }
 
-    const inlineRegex = /(?<!\$)\$((?:[^\$\n\\]|\\.)+?)\$(?!\$)/g;
+    const inlineRegex = /(?<!$)$((?:[^$\n\\]|\\.)+?)$(?!$)/g;
     while ((match = inlineRegex.exec(protectedMd)) !== null) {
         formulas.push({ tex: match[1].trim(), isBlock: false, pos: match.index });
     }

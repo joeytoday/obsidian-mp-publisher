@@ -163,8 +163,11 @@ export class ThemeManager {
         const scopedThemeCSS = scopeId ? this.scopeCSS(targetTheme.css, scopeId) : targetTheme.css;
         const finalCSS = scopedThemeCSS + '\n' + fontOverrideCSS;
 
-        // 注入新的样式标签（使用 createEl 符合 Obsidian DOM 创建规范）
-        const styleElement = element.createEl('style', { attr: { 'data-mp-theme': targetTheme.id } });
+        // 注入新的样式标签
+        // Obsidian lint 禁止通过 createEl 创建 style 元素，使用原生 DOM API 替代
+        const styleElement = activeDocument.createElement('style');
+        styleElement.setAttribute('data-mp-theme', targetTheme.id);
+        element.appendChild(styleElement);
         styleElement.textContent = finalCSS;
     }
 

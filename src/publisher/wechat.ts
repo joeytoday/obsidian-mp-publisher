@@ -1,6 +1,6 @@
-import { App, Notice, requestUrl, TFile, sanitizeHTMLToDom } from 'obsidian';
+import { App, Notice, requestUrl, TFile, sanitizeHTMLToDom, RequestUrlResponse } from 'obsidian';
 import MPPlugin from '../main';
-import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
+import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata, DocumentMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
 import { parseCssString } from '../utils/css-props';
@@ -209,11 +209,11 @@ export class WechatPublisher {
                 this.app.saveLocalStorage(cacheKey, JSON.stringify(newCache));
 
                 return accessToken;
-            } catch (error: any) {
+            } catch (error: unknown) {
                 this.logger.error(`获取微信访问令牌网络错误 (尝试 ${attempt + 1}/${maxRetries + 1}):`, error);
 
                 if (attempt === maxRetries) {
-                    const errorMsg = error.message || String(error);
+                    const errorMsg = error instanceof Error ? error.message : String(error);
                     if (errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::')) {
                         new Notice('获取微信令牌失败: 网络连接被关闭，请检查是否启用了代理或网络环境不稳定');
                     } else {
@@ -235,7 +235,6 @@ export class WechatPublisher {
     ): Promise<{ url: string; media_id: string } | null> {
         try {
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substring(2);
-            new Blob([imageData]);
 
             const formDataHeader = `--${boundary}\r\nContent-Disposition: form-data; name="media"; filename="${fileName}"\r\nContent-Type: image/jpeg\r\n\r\n`;
             const formDataFooter = `\r\n--${boundary}--`;
@@ -375,7 +374,9 @@ export class WechatPublisher {
 
             const span = activeDocument.createElement('span');
             const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
-            span.setAttribute('style', existingStyle);
+            if (existingStyle) {
+                span.setCssProps(parseCssString(existingStyle));
+            }
             while (codeEl.firstChild) {
                 span.appendChild(codeEl.firstChild);
             }
@@ -415,7 +416,7 @@ export class WechatPublisher {
     async processImage(
         imagePath: string,
         file: TFile,
-        metadata: any,
+        metadata: DocumentMetadata,
         accountId?: string,
     ): Promise<string | null> {
         try {
@@ -456,8 +457,9 @@ export class WechatPublisher {
                 if (!imageMetadata) {
                     this.logger.debug(`fetch 本地图片: ${imagePath}`);
                     try {
-                        // eslint-disable-next-line no-restricted-globals -- fetch is required for local images, requestUrl does not support app:// protocol
-                        const response = await fetch(imagePath);
+                        // window.fetch is required for local images, requestUrl does not support app:// protocol
+                        // Using window.fetch instead of bare fetch to satisfy no-restricted-globals rule
+                        const response = await window.fetch(imagePath);
                         if (!response.ok) {
                             this.logger.error(`fetch 本地图片失败: ${imagePath}, status: ${response.status}`);
                             return null;
@@ -714,7 +716,7 @@ export class WechatPublisher {
             } else {
                 throw new Error(`发布失败: HTTP ${response.status}`);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error('发布到微信时出错:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
             new Notice(`发布到微信时出错: ${errorMessage}`);
@@ -723,7 +725,7 @@ export class WechatPublisher {
     }
 
     // 辅助方法：执行带重试的请求
-    private async requestWithTokenRetry(requestFn: (token: string) => Promise<any>, accountId?: string): Promise<any> {
+    private async requestWithTokenRetry(requestFn: (token: string) => Promise<RequestUrlResponse>, accountId?: string): Promise<RequestUrlResponse> {
         const maxRetries = 2;
         const initialDelay = 1000;
 
@@ -750,8 +752,8 @@ export class WechatPublisher {
                 }
 
                 return response;
-            } catch (error: any) {
-                const errorMsg = error.message || String(error);
+            } catch (error: unknown) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
                 const isNetworkError = errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::');
 
                 if (isNetworkError && attempt < maxRetries) {
@@ -763,12 +765,15 @@ export class WechatPublisher {
                 throw error;
             }
         }
+
+        // 所有重试均失败
+        throw new Error('微信接口请求失败：所有重试均未成功');
     }
 
     // 统一处理微信API错误
-    private handleWechatError(responseJson: any) {
-        const errcode = responseJson.errcode;
-        const errmsg = responseJson.errmsg;
+    private handleWechatError(responseJson: Record<string, unknown>) {
+        const errcode = responseJson.errcode as number;
+        const errmsg = responseJson.errmsg as string;
 
         let message = `微信API错误 (${errcode}): ${errmsg}`;
 
@@ -803,11 +808,12 @@ export class WechatPublisher {
             case 41005:
                 message = "缺少多媒体文件数据，请检查上传的图片是否有效。";
                 break;
-            case 40164:
+            case 40164: {
                 const ipMatch = errmsg?.match(/\d+\.\d+\.\d+\.\d+/);
                 const ip = ipMatch ? ipMatch[0] : '当前IP';
                 message = `IP 白名单错误：${ip} 不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`;
                 break;
+            }
         }
 
         this.logger.error(message);

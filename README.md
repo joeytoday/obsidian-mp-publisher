@@ -1,10 +1,12 @@
-# MP Publisher - 微信公众号发布插件
+# MP Publisher - WeChat Official Account Publishing Plugin
 
-一个功能强大的 Obsidian 插件，支持自定义 CSS 主题样式预览和一键发布到微信公众号。
+A powerful Obsidian plugin that supports custom CSS theme preview and one-click publishing to WeChat Official Account (公众号).
 
 https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
-## ✨ 功能特点
+**English description** | [中文说明](#-功能特点)
+
+## ✨ Features
 
 ### 🎨 纯 CSS 主题系统
 - **8 个内置 CSS 主题**：默认、优雅、暗色、极简、清新绿、暖橙、猩红、学术

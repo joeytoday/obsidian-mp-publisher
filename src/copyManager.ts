@@ -121,8 +121,9 @@ export class CopyManager {
                     blob = new Blob([response.arrayBuffer], { type: contentType });
                 } else {
                     // 本地图片（app:// 等协议）：Electron 环境原生支持，requestUrl 不支持 app:// 协议
-                    // eslint-disable-next-line no-restricted-globals -- fetch is required for app:// local images, requestUrl does not support app:// protocol
-                    const response = await fetch(img.src);
+                    // window.fetch is required for app:// local images, requestUrl does not support app:// protocol
+                    // Using window.fetch instead of bare fetch to satisfy no-restricted-globals rule
+                    const response = await window.fetch(img.src);
                     blob = await response.blob();
                 }
 

@@ -56,50 +56,49 @@ const DEFAULT_SETTINGS: MPSettings = {
 };
 
 export class SettingsManager {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Obsidian Plugin lacks public type definitions for loadData/saveData
-    private plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> };
+    private plugin: { loadData(): Promise<Record<string, unknown>>; saveData(data: MPSettings): Promise<void> };
     private settings: MPSettings;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Obsidian Plugin lacks public type definitions for loadData/saveData
-    constructor(plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> }) {
+    constructor(plugin: { loadData(): Promise<Record<string, unknown>>; saveData(data: MPSettings): Promise<void> }) {
         this.plugin = plugin;
         this.settings = { ...DEFAULT_SETTINGS };
     }
 
     async loadSettings(): Promise<void> {
-        const savedData = (await this.plugin.loadData()) || {};
+        const rawSavedData: Record<string, unknown> = (await this.plugin.loadData()) ?? {};
 
         // 迁移旧设置：如果有旧的 templateId，映射到 activeThemeId
-        if (savedData.templateId && !savedData.activeThemeId) {
-            savedData.activeThemeId = savedData.templateId;
+        if (rawSavedData.templateId && !rawSavedData.activeThemeId) {
+            rawSavedData.activeThemeId = rawSavedData.templateId;
         }
 
         // 确保 customFonts 存在
-        if (!savedData.customFonts || savedData.customFonts.length === 0) {
-            savedData.customFonts = [...DEFAULT_FONTS];
+        if (!rawSavedData.customFonts || !(rawSavedData.customFonts as unknown[])?.length) {
+            rawSavedData.customFonts = [...DEFAULT_FONTS];
         }
 
         // 确保 downloadedRemoteThemes 存在
-        if (!savedData.downloadedRemoteThemes) {
-            savedData.downloadedRemoteThemes = [];
+        if (!rawSavedData.downloadedRemoteThemes) {
+            rawSavedData.downloadedRemoteThemes = [];
         }
 
         // 迁移旧的单公众号配置到多账号列表
-        if (!savedData.wechatAccounts || savedData.wechatAccounts.length === 0) {
-            if (savedData.wechatAppId && savedData.wechatAppSecret) {
-                savedData.wechatAccounts = [{
+        if (!rawSavedData.wechatAccounts || !(rawSavedData.wechatAccounts as unknown[])?.length) {
+            if (rawSavedData.wechatAppId && rawSavedData.wechatAppSecret) {
+                rawSavedData.wechatAccounts = [{
                     id: 'default',
                     name: '默认公众号',
-                    appId: savedData.wechatAppId,
-                    appSecret: savedData.wechatAppSecret,
+                    appId: rawSavedData.wechatAppId,
+                    appSecret: rawSavedData.wechatAppSecret,
                 }];
-                savedData.activeWechatAccountId = 'default';
+                rawSavedData.activeWechatAccountId = 'default';
             } else {
-                savedData.wechatAccounts = [];
-                savedData.activeWechatAccountId = '';
+                rawSavedData.wechatAccounts = [];
+                rawSavedData.activeWechatAccountId = '';
             }
         }
 
+        const savedData = rawSavedData as Partial<MPSettings>;
         this.settings = { ...DEFAULT_SETTINGS, ...savedData };
     }
 

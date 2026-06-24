@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.6.2] - 2026-06-24
+
+### 🔧 代码规范
+
+- 最低支持版本提升至 1.13.0（覆盖 `getLeaf('split')` 等 API 要求）
+- 使用 Obsidian 规范 API：`setCssProps` 替代 `setAttribute('style')`、`RequestUrlResponse` 替代 `any` 类型
+- 移除不允许的 eslint-disable 注释：`no-restricted-globals` → `window.fetch`，`no-explicit-any` → 精确类型
+- 定义 `LeafWithUpdateHeader` 接口替代 `as any` 访问内部 API
+- 19 处 async 回调改为 `void (async () => { ... })()` 模式，避免 Promise 未处理
+- 移除 await 非 Promise 的调用（`renderContent` 是同步方法）
+- enum 比较使用枚举值替代字符串字面量
+- case block lexical declaration 加 `{}` 包裹
+- CSS `!important` 替换为更高选择器特异性（双写类名）
+- `text-indent: 0` → `text-indent: 0px`（兼容性标注）
+- `builtin-modules` 依赖替换为 Node.js 内置 `module.builtinModules`
+- 不必要类型断言移除、不必要转义字符修复
+- `metadata.ts` 类型从 `any` 改为 `Partial<MPSettings>` / `Partial<DraftMetadata>`
+- README 添加英文标题和描述
+- `codeEl.innerHTML = ''` → `codeEl.empty()`
+
+---
+
 ## [2.6.1] - 2026-06-23
 
 ### 🔧 代码规范

@@ -183,18 +183,20 @@ export class ThemeManagerView extends ItemView {
         }
 
         const downloadButton = card.createEl('button', { text: '下载', cls: 'mp-tm-primary-btn' });
-        downloadButton.addEventListener('click', async () => {
-            downloadButton.disabled = true;
-            downloadButton.textContent = '下载中…';
+        downloadButton.addEventListener('click', () => {
+            void (async () => {
+                downloadButton.disabled = true;
+                downloadButton.textContent = '下载中…';
 
-            const theme = await this.themeManager.downloadRemoteTheme(themeInfo);
-            if (theme) {
-                new Notice(`已下载「${themeInfo.name}」`);
-                await this.renderContent();
-            } else {
-                downloadButton.disabled = false;
-                downloadButton.textContent = '下载';
-            }
+                const theme = await this.themeManager.downloadRemoteTheme(themeInfo);
+                if (theme) {
+                    new Notice(`已下载「${themeInfo.name}」`);
+                    this.renderContent();
+                } else {
+                    downloadButton.disabled = false;
+                    downloadButton.textContent = '下载';
+                }
+            })();
         });
     }
 
@@ -288,10 +290,12 @@ export class ThemeManagerView extends ItemView {
             }
         });
 
-        reloadButton.addEventListener('click', async () => {
-            await this.themeManager.reloadLocalThemes();
-            new Notice('已重新加载');
-            await this.renderContent();
+        reloadButton.addEventListener('click', () => {
+            void (async () => {
+                await this.themeManager.reloadLocalThemes();
+                new Notice('已重新加载');
+                this.renderContent();
+            })();
         });
     }
 
@@ -344,47 +348,49 @@ export class ThemeManagerView extends ItemView {
             cls: 'mp-tm-ghost-btn',
         });
 
-        saveButton.addEventListener('click', async () => {
-            const themeName = nameInput.value.trim();
-            const cssContent = cssTextarea.value.trim();
+        saveButton.addEventListener('click', () => {
+            void (async () => {
+                const themeName = nameInput.value.trim();
+                const cssContent = cssTextarea.value.trim();
 
-            if (!themeName) {
-                new Notice('请输入主题名称');
-                return;
-            }
-
-            if (!cssContent) {
-                new Notice('请输入 CSS 内容');
-                return;
-            }
-
-            if (!/^[a-zA-Z0-9\-_\u4e00-\u9fff]+$/.test(themeName)) {
-                new Notice('名称只能包含字母、数字、连字符、下划线和中文');
-                return;
-            }
-
-            try {
-                if (existingTheme) {
-                    if (themeName !== existingTheme.name) {
-                        const success = await this.themeManager.renameLocalTheme(existingTheme.id, themeName);
-                        if (!success) {
-                            new Notice('重命名失败，名称可能已存在');
-                            return;
-                        }
-                        const newThemeId = `local-${themeName}`;
-                        await this.themeManager.updateLocalTheme(newThemeId, cssContent);
-                    } else {
-                        await this.themeManager.updateLocalTheme(existingTheme.id, cssContent);
-                    }
-                    new Notice(`已更新「${themeName}」`);
-                } else {
-                    await this.themeManager.saveLocalTheme(themeName, cssContent);
-                    new Notice(`已创建「${themeName}」`);
+                if (!themeName) {
+                    new Notice('请输入主题名称');
+                    return;
                 }
-                await this.renderContent();
-            } catch (error) {
-                new Notice('保存失败: ' + (error as Error).message);
-            }
+
+                if (!cssContent) {
+                    new Notice('请输入 CSS 内容');
+                    return;
+                }
+
+                if (!/^[a-zA-Z0-9\-_\u4e00-\u9fff]+$/.test(themeName)) {
+                    new Notice('名称只能包含字母、数字、连字符、下划线和中文');
+                    return;
+                }
+
+                try {
+                    if (existingTheme) {
+                        if (themeName !== existingTheme.name) {
+                            const success = await this.themeManager.renameLocalTheme(existingTheme.id, themeName);
+                            if (!success) {
+                                new Notice('重命名失败，名称可能已存在');
+                                return;
+                            }
+                            const newThemeId = `local-${themeName}`;
+                            await this.themeManager.updateLocalTheme(newThemeId, cssContent);
+                        } else {
+                            await this.themeManager.updateLocalTheme(existingTheme.id, cssContent);
+                        }
+                        new Notice(`已更新「${themeName}」`);
+                    } else {
+                        await this.themeManager.saveLocalTheme(themeName, cssContent);
+                        new Notice(`已创建「${themeName}」`);
+                    }
+                    this.renderContent();
+                } catch (error) {
+                    new Notice('保存失败: ' + (error as Error).message);
+                }
+            })();
         });
 
         cancelButton.addEventListener('click', () => {
@@ -403,12 +409,14 @@ export class ThemeManagerView extends ItemView {
         });
 
         // 点击整行切换主题
-        card.addEventListener('click', async () => {
-            if (isActive) return;
-            this.themeManager.setActiveTheme(theme.id);
-            await this.settingsManager.updateSettings({ activeThemeId: theme.id });
-            new Notice(`已切换到「${theme.name}」`);
-            await this.renderContent();
+        card.addEventListener('click', () => {
+            void (async () => {
+                if (isActive) return;
+                this.themeManager.setActiveTheme(theme.id);
+                await this.settingsManager.updateSettings({ activeThemeId: theme.id });
+                new Notice(`已切换到「${theme.name}」`);
+                this.renderContent();
+            })();
         });
 
         // 卡片主体
@@ -455,8 +463,8 @@ export class ThemeManagerView extends ItemView {
         }) as HTMLInputElement;
         checkbox.checked = isQuickSwitchVisible;
         checkbox.addEventListener('click', (event) => event.stopPropagation());
-        checkbox.addEventListener('change', async () => {
-            await this.themeManager.setThemeQuickSwitchVisible(theme.id, checkbox.checked);
+        checkbox.addEventListener('change', () => {
+            void this.themeManager.setThemeQuickSwitchVisible(theme.id, checkbox.checked);
         });
 
         const previewButton = actions.createEl('button', {
@@ -464,9 +472,9 @@ export class ThemeManagerView extends ItemView {
             attr: { 'aria-label': '预览效果' },
         });
         setIcon(previewButton, 'eye');
-        previewButton.addEventListener('click', async (event) => {
+        previewButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            await this.openThemePreview(theme);
+            void this.openThemePreview(theme);
         });
 
         const codeButton = actions.createEl('button', {
@@ -474,9 +482,9 @@ export class ThemeManagerView extends ItemView {
             attr: { 'aria-label': '查看 CSS' },
         });
         setIcon(codeButton, 'code');
-        codeButton.addEventListener('click', async (event) => {
+        codeButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            await this.openThemeCSS(theme);
+            void this.openThemeCSS(theme);
         });
 
         if (canDelete) {
@@ -498,7 +506,7 @@ export class ThemeManagerView extends ItemView {
                             await this.themeManager.deleteLocalTheme(theme.id);
                         }
                         new Notice(`已删除「${theme.name}」`);
-                        await this.renderContent();
+                        this.renderContent();
                     },
                 ).open();
             });
