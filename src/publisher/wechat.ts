@@ -3,6 +3,7 @@ import MPPlugin from '../main';
 import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata, DocumentMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
+import { processListItems } from '../utils/dom-utils';
 import { parseCssString } from '../utils/css-props';
 
 // 微信素材类型接口
@@ -301,7 +302,7 @@ export class WechatPublisher {
             tempDiv.appendChild(sanitizeHTMLToDom(content));
 
             // 处理列表（清理空项、空段落、添加 margin: 0）
-            this.processLists(tempDiv);
+            processListItems(tempDiv);
 
             // 获取所有图片元素
             const images = tempDiv.querySelectorAll('img');
@@ -330,7 +331,7 @@ export class WechatPublisher {
             }
 
             // 再次处理列表（处理图片后可能产生新的空行）
-            this.processLists(tempDiv);
+            processListItems(tempDiv);
 
             // 使用 innerHTML 输出，保持与输入一致的 HTML 结构，不引入额外的 xmlns 等属性
             return tempDiv.innerHTML;
@@ -338,21 +339,6 @@ export class WechatPublisher {
             this.logger.error('处理文档图片时出错:', error);
             throw error;
         }
-    }
-
-    /**
-     * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为 section + p 结构，缩进已在 mp-list-section 上设置
-     * 只处理 mp-list-item 内部的 p 标签内联化，与复制流程 CopyManager.processLists 保持一致
-     * 不强制覆盖 padding-left，converter 已根据层级正确设置缩进
-     */
-    private processLists(container: HTMLElement): void {
-        container.querySelectorAll('.mp-list-item').forEach(item => {
-            const el = item as HTMLElement;
-            el.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).setCssProps({ display: 'inline', margin: '0', padding: '0' });
-            });
-        });
     }
 
     /**

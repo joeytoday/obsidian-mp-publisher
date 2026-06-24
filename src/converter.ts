@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Component, sanitizeHTMLToDom } from 'obsidian';
+import { App, MarkdownRenderer, Component, sanitizeHTMLToDom, Notice } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import type { ThemeManager } from './themeManager';
@@ -104,7 +104,8 @@ export class MPConverter {
      * 逐个处理列表，处理一个后重新查询 DOM，保证遍历顺序忠实于文档顺序
      */
     private static convertListsToSection(container: HTMLElement): void {
-        while (container.querySelector('ul, ol')) {
+        let maxIterations = 100;
+        while (container.querySelector('ul, ol') && maxIterations-- > 0) {
             const allLists = Array.from(container.querySelectorAll('ul, ol'));
             if (allLists.length === 0) break;
 
@@ -118,6 +119,9 @@ export class MPConverter {
 
             if (!container.querySelector('ul, ol')) break;
         }
+        if (maxIterations <= 0) {
+            console.warn('convertListsToSection: 达到最大迭代次数，可能存在未转换的列表');
+        }
     }
 
     /**
@@ -126,14 +130,13 @@ export class MPConverter {
      *
      * @param listElement 要转换的 ul/ol 元素
      * @param depth 当前嵌套层级（0 = 顶层列表）
-     * @param mixedType 是否为混合类型列表（子列表类型与父列表不同）
      *
      * 核心设计：
      * - padding-left 在 mp-list-section 上，mp-list-item 无缩进
      * - 嵌套层 padding-left 固定 1.5em，每层间距一致
      * - 查找所有子列表（querySelectorAll），避免遗漏
      */
-    private static convertSingleList(listElement: HTMLElement, depth: number, mixedType: boolean = false): void {
+    private static convertSingleList(listElement: HTMLElement, depth: number): void {
         const isOrdered = listElement.tagName.toLowerCase() === 'ol';
         const listItems = Array.from(listElement.querySelectorAll(':scope > li'));
 
@@ -183,8 +186,7 @@ export class MPConverter {
             childLists.forEach(child => {
                 const clone = child.cloneNode(true) as HTMLElement;
                 section.appendChild(clone);
-                const childIsMixedType = child.tagName.toLowerCase() !== listElement.tagName.toLowerCase();
-                this.convertSingleList(clone, depth + 1, childIsMixedType);
+                this.convertSingleList(clone, depth + 1);
             });
 
             itemNumber++;
@@ -582,6 +584,7 @@ export async function markdownToHtml(
                 });
             } catch (juiceError) {
                 console.error('juice 内联 CSS 失败:', juiceError);
+                new Notice('CSS 内联失败，样式可能不完整，请检查主题 CSS 是否有语法错误');
             }
         }
 
@@ -697,7 +700,8 @@ function svgToDataUrl(svgElement: SVGElement): Promise<string | null> {
                 resolve(null);
             };
             img.src = url;
-        } catch {
+        } catch (svgError) {
+            console.error('SVG 转 PNG 失败:', svgError);
             resolve(null);
         }
     });
