@@ -164,7 +164,7 @@ export class ThemeManagerView extends ItemView {
             }
         };
 
-        refreshButton.addEventListener('click', loadRemoteIndex);
+        refreshButton.addEventListener('click', () => void loadRemoteIndex());
         await loadRemoteIndex();
     }
 
@@ -520,7 +520,7 @@ export class ThemeManagerView extends ItemView {
 
         if (existingLeaves.length > 0) {
             leaf = existingLeaves[0];
-            this.app.workspace.revealLeaf(leaf);
+            void this.app.workspace.revealLeaf(leaf);
         } else {
             leaf = this.app.workspace.getLeaf('split', 'vertical');
             await leaf.setViewState({
@@ -543,7 +543,7 @@ export class ThemeManagerView extends ItemView {
 
         if (existingLeaves.length > 0) {
             leaf = existingLeaves[0];
-            this.app.workspace.revealLeaf(leaf);
+            void this.app.workspace.revealLeaf(leaf);
         } else {
             leaf = this.app.workspace.getLeaf('split', 'vertical');
             await leaf.setViewState({

@@ -1,6 +1,19 @@
 import { App, MarkdownView, Modal, Notice, Setting } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
+
+interface SelectedMaterial {
+	media_id: string;
+	url?: string;
+	name?: string;
+	isLocal?: boolean;
+}
+
+interface SelectedFileInfo {
+	name: string;
+	[path: string]: unknown;
+}
+
 // 封面图选择模态框
 export class CoverImageModal extends Modal {
 	plugin: MPPlugin;
@@ -273,7 +286,7 @@ export class CoverImageModal extends Modal {
 				new Notice('请先选择图片');
 				return;
 			}
-			const material = JSON.parse(selectedMaterial);
+			const material = JSON.parse(selectedMaterial) as SelectedMaterial;
 			this.onImageSelected(material.media_id);
 			this.close();
 		});
@@ -289,7 +302,7 @@ export class CoverImageModal extends Modal {
 					return;
 				}
 
-				const fileInfo = JSON.parse(selectedFileInfo);
+				const fileInfo = JSON.parse(selectedFileInfo) as SelectedFileInfo;
 
 				// 立即上传图片到微信获取 media_id
 				localConfirmButton.disabled = true;
@@ -320,9 +333,9 @@ export class CoverImageModal extends Modal {
 					this.onImageSelected(mediaId);
 					new Notice('封面图上传成功');
 					this.close();
-				} catch (error) {
+				} catch (error: unknown) {
 					console.error('上传封面图失败:', error);
-					new Notice('上传封面图失败：' + (error.message || '未知错误'));
+					new Notice('上传封面图失败：' + (error instanceof Error ? error.message : String(error)));
 					localConfirmButton.disabled = false;
 					localConfirmButton.textContent = '确认';
 				}
@@ -332,13 +345,13 @@ export class CoverImageModal extends Modal {
 		// 分页按钮事件
 		prevButton.addEventListener('click', () => {
 			if (currentPage > 0) {
-				loadMaterialsPage(currentPage - 1);
+				void loadMaterialsPage(currentPage - 1);
 			}
 		});
 
 		nextButton.addEventListener('click', () => {
 			if ((currentPage + 1) * pageSize < totalCount) {
-				loadMaterialsPage(currentPage + 1);
+				void loadMaterialsPage(currentPage + 1);
 			}
 		});
 
@@ -481,7 +494,7 @@ export class PublishModal extends Modal {
 				// 从sessionStorage获取选中的素材信息
 				const selectedMaterial = sessionStorage.getItem('selected_material');
 				if (selectedMaterial) {
-					const material = JSON.parse(selectedMaterial);
+					const material = JSON.parse(selectedMaterial) as SelectedMaterial;
 					if (material.url) {
 						img.src = material.url;
 						this.coverImagePreview.appendChild(img);
@@ -561,7 +574,7 @@ export class PublishModal extends Modal {
 						// 获取选中的封面图 media_id
 						const selectedMaterial = sessionStorage.getItem('selected_material');
 						if (selectedMaterial) {
-							const material = JSON.parse(selectedMaterial);
+							const material = JSON.parse(selectedMaterial) as SelectedMaterial;
 							this.selectedCoverMediaId = material.media_id;
 						}
 
@@ -583,9 +596,9 @@ export class PublishModal extends Modal {
 						if (success) {
 							this.close();
 						}
-					} catch (error) {
+					} catch (error: unknown) {
 						console.error('发布失败:', error);
-						new Notice('发布失败：' + (error.message || '未知错误'));
+						new Notice('发布失败：' + (error instanceof Error ? error.message : String(error)));
 						publishButton.disabled = false;
 						publishButton.textContent = '发布';
 					}

@@ -27,21 +27,21 @@ export class Logger {
         return this.debugMode;
     }
 
-    public debug(...args: any[]): void {
+    public debug(...args: unknown[]): void {
         if (this.debugMode) {
             console.debug('[DEBUG]', ...args);
         }
     }
 
-    public info(...args: any[]): void {
+    public info(...args: unknown[]): void {
         console.info('[INFO]', ...args);
     }
 
-    public warn(...args: any[]): void {
+    public warn(...args: unknown[]): void {
         console.warn('[WARN]', ...args);
     }
 
-    public error(...args: any[]): void {
+    public error(...args: unknown[]): void {
         console.error('[ERROR]', ...args);
     }
 }

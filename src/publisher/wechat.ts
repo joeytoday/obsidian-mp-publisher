@@ -20,6 +20,31 @@ interface TokenCache {
     expireTime: number;
 }
 
+// 微信 API 响应类型
+interface WechatBaseResponse {
+    errcode: number;
+    errmsg: string;
+}
+
+interface WechatTokenResponse extends WechatBaseResponse {
+    access_token?: string;
+}
+
+interface WechatUploadResponse extends WechatBaseResponse {
+    url?: string;
+    media_id?: string;
+}
+
+interface WechatDraftResponse extends WechatBaseResponse {
+    media_id?: string;
+    item?: Array<{ index: number; ad_count: number; }>;
+}
+
+interface WechatMaterialsResponse extends WechatBaseResponse {
+    item?: WechatMaterial[];
+    total_count?: number;
+}
+
 export class WechatPublisher {
     private app: App;
     private plugin: MPPlugin;
@@ -50,13 +75,15 @@ export class WechatPublisher {
                 });
             }, accountId);
 
-            if (materialsResponse.json.errcode && materialsResponse.json.errcode !== 0) {
-                this.handleWechatError(materialsResponse.json);
+            const data = materialsResponse.json as WechatMaterialsResponse;
+
+            if (data.errcode && data.errcode !== 0) {
+                this.handleWechatError(data);
                 return { items: [], totalCount: 0 };
             }
 
-            const items = materialsResponse.json.item || [];
-            const totalCount = materialsResponse.json.total_count || 0;
+            const items = data.item || [];
+            const totalCount = data.total_count || 0;
 
             // 更新缓存
             const cacheKey = `wechat_material_cache_page_${page}`;
@@ -87,7 +114,7 @@ export class WechatPublisher {
             if (mediaId) {
                 // 获取现有的上传图片缓存
                 const uploadedImagesCache = this.app.loadLocalStorage('wechat_uploaded_images_cache');
-                const uploadedImages = uploadedImagesCache ? JSON.parse(uploadedImagesCache) : {};
+                const uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = uploadedImagesCache ? JSON.parse(uploadedImagesCache) as Record<string, { url: string; name: string; uploadTime: number }> : {};
 
                 // 添加新上传的图片
                 uploadedImages[mediaId] = {
@@ -131,7 +158,7 @@ export class WechatPublisher {
         if (!forceRefresh) {
             try {
                 const cacheData = this.app.loadLocalStorage(cacheKey);
-                const cache: TokenCache = cacheData ? JSON.parse(cacheData) : null;
+                const cache: TokenCache | null = cacheData ? JSON.parse(cacheData) as TokenCache : null;
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
                 if (cache && Date.now() < cache.expireTime) {
@@ -173,11 +200,13 @@ export class WechatPublisher {
                     }
                 });
 
-                if (!tokenResponse.json.access_token) {
-                    this.logger.error("获取微信访问令牌业务失败: ", tokenResponse.json);
-                    const errcode = tokenResponse.json.errcode;
-                    const errmsg = tokenResponse.json.errmsg || '未知错误';
-                    
+                const tokenData = tokenResponse.json as WechatTokenResponse;
+
+                if (!tokenData.access_token) {
+                    this.logger.error("获取微信访问令牌业务失败: ", tokenData);
+                    const errcode = tokenData.errcode;
+                    const errmsg = tokenData.errmsg || '未知错误';
+
                     // 业务失败通常不需要重试，除非是特定错误
                     if (attempt === maxRetries) {
                         // 针对 IP 白名单错误提供明确的提示
@@ -199,7 +228,7 @@ export class WechatPublisher {
                     continue; // 尝试重试
                 }
 
-                const accessToken = tokenResponse.json.access_token;
+                const accessToken = tokenData.access_token;
 
                 // 更新缓存（110分钟 = 6600000毫秒）
                 const expireTime = Date.now() + 6600000;
@@ -263,14 +292,16 @@ export class WechatPublisher {
 
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
-            if (response.json.errcode && response.json.errcode !== 0) {
-                this.handleWechatError(response.json);
-                throw new Error(response.json.errmsg);
+            const uploadData = response.json as WechatUploadResponse;
+
+            if (uploadData.errcode && uploadData.errcode !== 0) {
+                this.handleWechatError(uploadData);
+                throw new Error(uploadData.errmsg);
             }
 
             return {
-                url: response.json.url,
-                media_id: response.json.media_id
+                url: uploadData.url ?? '',
+                media_id: uploadData.media_id ?? ''
             };
         } catch (error) {
             this.logger.error('上传图片失败:', error);
@@ -359,7 +390,7 @@ export class WechatPublisher {
             if (codeEl.closest('pre')) return;
 
             const span = activeDocument.createElement('span');
-            const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
+            const existingStyle = codeEl.getAttribute('style') || '';
             if (existingStyle) {
                 span.setCssProps(parseCssString(existingStyle));
             }
@@ -651,7 +682,8 @@ export class WechatPublisher {
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
             // 如果是 40007 错误且我们之前尝试更新现有草稿，可能是草稿 ID 已失效，清除它并重试一次创建新草稿
-            if (response.json && response.json.errcode === 40007 && metadata.draft?.media_id) {
+            const initialData = response.json as WechatDraftResponse;
+            if (initialData.errcode === 40007 && metadata.draft?.media_id) {
                 this.logger.warn('草稿 media_id 已失效，尝试重新创建新草稿');
                 metadata.draft.media_id = ''; // 清除失效的 ID
                 
@@ -679,17 +711,18 @@ export class WechatPublisher {
 
             if (response.status === 200) {
                 // 检查业务错误码
-                if (response.json.errcode && response.json.errcode !== 0) {
-                    this.handleWechatError(response.json);
+                const draftData = response.json as WechatDraftResponse;
+                if (draftData.errcode && draftData.errcode !== 0) {
+                    this.handleWechatError(draftData);
                     return false;
                 }
 
                 // 成功，更新元数据
-                if (response.json.media_id) {
-                    updateData.media_id = response.json.media_id;
+                if (draftData.media_id) {
+                    updateData.media_id = draftData.media_id;
                 }
-                if (response.json.item) {
-                    updateData.item = response.json.item;
+                if (draftData.item) {
+                    updateData.item = draftData.item;
                 }
 
                 updateDraftMetadata(metadata, updateData);
@@ -729,8 +762,9 @@ export class WechatPublisher {
                 let response = await requestFn(accessToken);
 
                 // 处理 Token 失效
-                if (response.json && [40001, 40014, 42001].includes(response.json.errcode)) {
-                    this.logger.warn(`Token失效 (${response.json.errcode})，尝试刷新并重试...`);
+                const tokenCheckData = response.json ? (response.json as WechatBaseResponse) : null;
+                if (tokenCheckData && [40001, 40014, 42001].includes(tokenCheckData.errcode)) {
+                    this.logger.warn(`Token失效 (${tokenCheckData.errcode})，尝试刷新并重试...`);
                     const newToken = await this.getAccessToken(true, accountId);
                     if (newToken) {
                         response = await requestFn(newToken);
@@ -757,9 +791,9 @@ export class WechatPublisher {
     }
 
     // 统一处理微信API错误
-    private handleWechatError(responseJson: Record<string, unknown>) {
-        const errcode = responseJson.errcode as number;
-        const errmsg = responseJson.errmsg as string;
+    private handleWechatError(responseJson: WechatBaseResponse) {
+        const errcode = responseJson.errcode;
+        const errmsg = responseJson.errmsg;
 
         let message = `微信API错误 (${errcode}): ${errmsg}`;
 

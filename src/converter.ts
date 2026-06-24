@@ -66,7 +66,7 @@ export class MPConverter {
         this.processCallouts(container);
 
         // 4. 处理图片
-        container.querySelectorAll('span.internal-embed[alt][src]').forEach(async el => {
+        container.querySelectorAll('span.internal-embed[alt][src]').forEach(el => {
             const originalSpan = el as HTMLElement;
             const src = originalSpan.getAttribute('src');
             const alt = originalSpan.getAttribute('alt');
