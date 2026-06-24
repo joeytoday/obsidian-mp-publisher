@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import { VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from '../guideView';
 import MPPlugin from '../main';
 import { WechatAccount } from './settings';
@@ -120,11 +120,13 @@ export class MPSettingTab extends PluginSettingTab {
                 value: account.name,
             },
         });
-        nameInput.addEventListener('change', async () => {
-            account.name = nameInput.value;
-            await this.plugin.settingsManager.updateSettings({
-                wechatAccounts: settings.wechatAccounts,
-            });
+        nameInput.addEventListener('change', () => {
+            void (async () => {
+                account.name = nameInput.value;
+                await this.plugin.settingsManager.updateSettings({
+                    wechatAccounts: settings.wechatAccounts,
+                });
+            })();
         });
 
         if (isActive) {
@@ -137,35 +139,39 @@ export class MPSettingTab extends PluginSettingTab {
                 text: '设为默认',
                 cls: 'mp-account-action-btn',
             });
-            setDefaultBtn.addEventListener('click', async () => {
-                await this.plugin.settingsManager.updateSettings({
-                    activeWechatAccountId: account.id,
-                    wechatAppId: account.appId,
-                    wechatAppSecret: account.appSecret,
-                });
-                this.display();
+            setDefaultBtn.addEventListener('click', () => {
+                void (async () => {
+                    await this.plugin.settingsManager.updateSettings({
+                        activeWechatAccountId: account.id,
+                        wechatAppId: account.appId,
+                        wechatAppSecret: account.appSecret,
+                    });
+                    this.display();
+                })();
             });
         }
         const deleteBtn = actions.createEl('button', {
             text: '删除',
             cls: 'mp-account-action-btn mp-account-action-btn--danger',
         });
-        deleteBtn.addEventListener('click', async () => {
-            const updatedAccounts = settings.wechatAccounts.filter(a => a.id !== account.id);
-            const updates: Partial<typeof settings> = {
-                wechatAccounts: updatedAccounts,
-            };
-            if (isActive && updatedAccounts.length > 0) {
-                updates.activeWechatAccountId = updatedAccounts[0].id;
-                updates.wechatAppId = updatedAccounts[0].appId;
-                updates.wechatAppSecret = updatedAccounts[0].appSecret;
-            } else if (updatedAccounts.length === 0) {
-                updates.activeWechatAccountId = '';
-                updates.wechatAppId = '';
-                updates.wechatAppSecret = '';
-            }
-            await this.plugin.settingsManager.updateSettings(updates);
-            this.display();
+        deleteBtn.addEventListener('click', () => {
+            void (async () => {
+                const updatedAccounts = settings.wechatAccounts.filter(a => a.id !== account.id);
+                const updates: Partial<typeof settings> = {
+                    wechatAccounts: updatedAccounts,
+                };
+                if (isActive && updatedAccounts.length > 0) {
+                    updates.activeWechatAccountId = updatedAccounts[0].id;
+                    updates.wechatAppId = updatedAccounts[0].appId;
+                    updates.wechatAppSecret = updatedAccounts[0].appSecret;
+                } else if (updatedAccounts.length === 0) {
+                    updates.activeWechatAccountId = '';
+                    updates.wechatAppId = '';
+                    updates.wechatAppSecret = '';
+                }
+                await this.plugin.settingsManager.updateSettings(updates);
+                this.display();
+            })();
         });
 
         // 卡片内容：AppID + AppSecret

@@ -164,10 +164,11 @@ export class ThemeManager {
         const finalCSS = scopedThemeCSS + '\n' + fontOverrideCSS;
 
         // 注入新的样式标签
-        const styleElement = document.createElement('style');
+        // Obsidian lint 禁止通过 createEl 创建 style 元素，使用原生 DOM API 替代
+        const styleElement = activeDocument.createElement('style');
         styleElement.setAttribute('data-mp-theme', targetTheme.id);
+        element.appendChild(styleElement);
         styleElement.textContent = finalCSS;
-        element.insertBefore(styleElement, element.firstChild);
     }
 
     /** 给 CSS 选择器加上作用域前缀，防止跨视图污染 */

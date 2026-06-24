@@ -3,6 +3,8 @@
  * 支持 LaTeX 公式的预处理和图片转换
  */
 
+import { sanitizeHTMLToDom } from 'obsidian';
+
 /**
  * 预处理 Markdown 内容，转换 LaTeX 语法为 Obsidian 支持的 $ 语法
  */
@@ -66,7 +68,7 @@ export async function waitForAsyncRender(el: HTMLElement, maxWait = 3000): Promi
 
         if (mathReady && mermaidReady) return;
 
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => window.setTimeout(r, 100));
     }
 }
 
@@ -96,7 +98,7 @@ export async function convertMathToSVG(htmlContent: string, markdown: string): P
             const imgHtml = renderFormulaWithApi(formula.tex, formula.isBlock);
             if (imgHtml) {
                 const placeholder = doc.createElement('span');
-                placeholder.innerHTML = imgHtml;
+                placeholder.appendChild(sanitizeHTMLToDom(imgHtml));
                 container.replaceWith(placeholder.firstChild as Node);
             }
         } catch (e) {
@@ -116,12 +118,12 @@ function extractFormulas(markdown: string): Array<{ tex: string; isBlock: boolea
     let protectedMd = markdown.replace(/```[\s\S]*?```|`[^`\n]*?`/g, m => ' '.repeat(m.length));
 
     let match: RegExpExecArray | null;
-    const blockRegex = /\$\$([\s\S]+?)\$\$/g;
+    const blockRegex = /$$([\s\S]+?)$$/g;
     while ((match = blockRegex.exec(protectedMd)) !== null) {
         formulas.push({ tex: match[1].trim(), isBlock: true, pos: match.index });
     }
 
-    const inlineRegex = /(?<!\$)\$((?:[^\$\n\\]|\\.)+?)\$(?!\$)/g;
+    const inlineRegex = /(?<!$)$((?:[^$\n\\]|\\.)+?)$(?!$)/g;
     while ((match = inlineRegex.exec(protectedMd)) !== null) {
         formulas.push({ tex: match[1].trim(), isBlock: false, pos: match.index });
     }

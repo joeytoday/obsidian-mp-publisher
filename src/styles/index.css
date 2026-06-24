@@ -141,12 +141,12 @@
 }
 
 /* 显示/隐藏内容 */
-.content-hidden {
-    display: none !important;
+.content-hidden.content-hidden {
+    display: none;
 }
 
-.content-visible {
-    display: block !important;
+.content-visible.content-visible {
+    display: block;
 }
 
 /* 封面图选择内容区域 */

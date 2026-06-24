@@ -34,9 +34,7 @@ export class Logger {
     }
 
     public info(...args: any[]): void {
-        if (this.debugMode) {
-            console.debug('[INFO]', ...args);
-        }
+        console.info('[INFO]', ...args);
     }
 
     public warn(...args: any[]): void {

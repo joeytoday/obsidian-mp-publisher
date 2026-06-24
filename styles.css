@@ -54,11 +54,11 @@
 }
 .mp-controls-group button:disabled {
   opacity: 0.5;
-  background: var(--background-primary) !important;
-  color: var(--text-muted) !important;
-  cursor: not-allowed !important;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: not-allowed;
   transform: none;
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--background-modifier-border);
   box-shadow: none;
 }
 .mp-controls-group .mp-refresh-button,
@@ -113,9 +113,9 @@
 }
 .custom-select.disabled {
   opacity: 0.5;
-  background: var(--background-secondary) !important;
-  color: var(--text-muted) !important;
-  border-color: var(--background-modifier-border) !important;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border-color: var(--background-modifier-border);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -1382,11 +1382,11 @@ ol {
   width: 80%;
   max-width: 900px;
 }
-.content-hidden {
-  display: none !important;
+.content-hidden.content-hidden {
+  display: none;
 }
-.content-visible {
-  display: block !important;
+.content-visible.content-visible {
+  display: block;
 }
 .wechat-cover-content {
   position: relative;
@@ -2064,8 +2064,8 @@ ol {
 
 /* ---- 隐藏 ---- */
 
-.mp-tm-hidden {
-    display: none !important;
+.mp-tm-hidden.mp-tm-hidden {
+    display: none;
 }
 
 /* ---- CSS 编辑器区域（新建主题） ---- */

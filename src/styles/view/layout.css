@@ -65,11 +65,11 @@
 
 .mp-controls-group button:disabled {
     opacity: 0.5;
-    background: var(--background-primary) !important;
-    color: var(--text-muted) !important;
-    cursor: not-allowed !important;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    cursor: not-allowed;
     transform: none;
-    border-color: var(--background-modifier-border) !important;
+    border-color: var(--background-modifier-border);
     box-shadow: none;
 }
 
@@ -131,9 +131,9 @@
 
 .custom-select.disabled {
     opacity: 0.5;
-    background: var(--background-secondary) !important;
-    color: var(--text-muted) !important;
-    border-color: var(--background-modifier-border) !important;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
     cursor: not-allowed;
     box-shadow: none;
 }

@@ -81,8 +81,8 @@
 
 /* ========== 引用 ========== */
 .mp-content-section blockquote {
-  border: none !important;
-  border-left: none !important;
+  border: none;
+  border-left: none;
   padding: 18px 24px;
   background: #F4F4F4;
   margin: 1.5em 0;

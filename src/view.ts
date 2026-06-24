@@ -1,8 +1,9 @@
-import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon, MarkdownView } from 'obsidian';
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon, MarkdownView, sanitizeHTMLToDom } from 'obsidian';
 import { MPConverter, markdownToHtml } from './converter';
 import { CopyManager } from './copyManager';
 import type { SettingsManager } from './settings/settings';
 import type { ThemeManager } from './themeManager';
+import { ThemeSource } from './types/css-theme';
 import type MPPublisherPlugin from './main';
 
 export const VIEW_TYPE_MP = 'mp-preview';
@@ -10,7 +11,7 @@ export const VIEW_TYPE_MP = 'mp-preview';
 export class MPView extends ItemView {
     private previewEl: HTMLElement;
     private currentFile: TFile | null = null;
-    private updateTimer: NodeJS.Timeout | null = null;
+    private updateTimer: number | null = null;
     private refreshButton: HTMLButtonElement;
     private copyButton: HTMLButtonElement;
     private themeManager: ThemeManager;
@@ -72,11 +73,13 @@ export class MPView extends ItemView {
         this.customThemeSelect.id = 'template-select';
 
         // 主题选择器事件
-        this.customThemeSelect.querySelector('.custom-select')?.addEventListener('change', async (e: Event) => {
-            const value = (e as CustomEvent).detail.value;
-            this.themeManager.setActiveTheme(value);
-            await this.settingsManager.updateSettings({ activeThemeId: value });
-            this.applyCurrentTheme();
+        this.customThemeSelect.querySelector('.custom-select')?.addEventListener('change', (e: Event) => {
+            void (async () => {
+                const value = (e as CustomEvent).detail.value;
+                this.themeManager.setActiveTheme(value);
+                await this.settingsManager.updateSettings({ activeThemeId: value });
+                this.applyCurrentTheme();
+            })();
         });
 
         // 字体选择器
@@ -88,11 +91,13 @@ export class MPView extends ItemView {
         this.customFontSelect.id = 'font-select';
 
         // 字体选择器事件
-        this.customFontSelect.querySelector('.custom-select')?.addEventListener('change', async (e: Event) => {
-            const value = (e as CustomEvent).detail.value;
-            this.themeManager.setFont(value);
-            await this.settingsManager.updateSettings({ fontFamily: value });
-            this.applyCurrentTheme();
+        this.customFontSelect.querySelector('.custom-select')?.addEventListener('change', (e: Event) => {
+            void (async () => {
+                const value = (e as CustomEvent).detail.value;
+                this.themeManager.setFont(value);
+                await this.settingsManager.updateSettings({ fontFamily: value });
+                this.applyCurrentTheme();
+            })();
         });
 
         // 字号调整
@@ -196,71 +201,75 @@ export class MPView extends ItemView {
         });
 
         // 复制按钮点击事件
-        this.copyButton.addEventListener('click', async () => {
-            if (!this.currentFile) return;
+        this.copyButton.addEventListener('click', () => {
+            void (async () => {
+                if (!this.currentFile) return;
 
-            this.copyButton.disabled = true;
-            this.copyButton.setText('复制中...');
+                this.copyButton.disabled = true;
+                this.copyButton.setText('复制中...');
 
-            try {
-                const content = await this.app.vault.cachedRead(this.currentFile);
-                const htmlContent = await markdownToHtml(
-                    this.app,
-                    content,
-                    this.currentFile.path,
-                    this.themeManager,
-                    this.plugin.settings.convertMathToSVG,
-                );
+                try {
+                    const content = await this.app.vault.cachedRead(this.currentFile);
+                    const htmlContent = await markdownToHtml(
+                        this.app,
+                        content,
+                        this.currentFile.path,
+                        this.themeManager,
+                        this.plugin.settings.convertMathToSVG,
+                    );
 
-                // 创建临时容器并复制
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = htmlContent;
-                document.body.appendChild(tempDiv);
+                    // 创建临时容器并复制
+                    const tempDiv = activeDocument.createElement('div');
+                    tempDiv.appendChild(sanitizeHTMLToDom(htmlContent));
+                    activeDocument.body.appendChild(tempDiv);
 
-                await CopyManager.copyToClipboard(tempDiv);
-                document.body.removeChild(tempDiv);
+                    await CopyManager.copyToClipboard(tempDiv);
+                    activeDocument.body.removeChild(tempDiv);
 
-                this.copyButton.setText('复制成功');
+                    this.copyButton.setText('复制成功');
 
-                setTimeout(() => {
-                    this.copyButton.disabled = false;
-                    this.copyButton.setText('复制为公众号格式');
-                }, 2000);
-            } catch (error) {
-                this.copyButton.setText('复制失败');
-                setTimeout(() => {
-                    this.copyButton.disabled = false;
-                    this.copyButton.setText('复制为公众号格式');
-                }, 2000);
-            }
+                    window.setTimeout(() => {
+                        this.copyButton.disabled = false;
+                        this.copyButton.setText('复制为公众号格式');
+                    }, 2000);
+                } catch {
+                    this.copyButton.setText('复制失败');
+                    window.setTimeout(() => {
+                        this.copyButton.disabled = false;
+                        this.copyButton.setText('复制为公众号格式');
+                    }, 2000);
+                }
+            })();
         });
 
         // 发布按钮点击事件
-        publishButton.addEventListener('click', async () => {
-            if (!this.currentFile) return;
+        publishButton.addEventListener('click', () => {
+            void (async () => {
+                if (!this.currentFile) return;
 
-            const leaves = this.app.workspace.getLeavesOfType('markdown');
-            let markdownView: MarkdownView | null = null;
+                const leaves = this.app.workspace.getLeavesOfType('markdown');
+                let markdownView: MarkdownView | null = null;
 
-            for (const leaf of leaves) {
-                const view = leaf.view;
-                if (view instanceof MarkdownView && view.file === this.currentFile) {
-                    markdownView = view;
-                    break;
+                for (const leaf of leaves) {
+                    const view = leaf.view;
+                    if (view instanceof MarkdownView && view.file === this.currentFile) {
+                        markdownView = view;
+                        break;
+                    }
                 }
-            }
 
-            if (!markdownView) {
-                await this.app.workspace.openLinkText(this.currentFile.path, '', false);
-                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (activeView && activeView.file === this.currentFile) {
-                    markdownView = activeView;
+                if (!markdownView) {
+                    await this.app.workspace.openLinkText(this.currentFile.path, '', false);
+                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (activeView && activeView.file === this.currentFile) {
+                        markdownView = activeView;
+                    }
                 }
-            }
 
-            if (markdownView && this.plugin && typeof this.plugin.showPublishModal === 'function') {
-                this.plugin.showPublishModal.call(this.plugin, markdownView);
-            }
+                if (markdownView && this.plugin && typeof this.plugin.showPublishModal === 'function') {
+                    this.plugin.showPublishModal.call(this.plugin, markdownView);
+                }
+            })();
         });
 
         // 监听文档变化
@@ -419,7 +428,7 @@ export class MPView extends ItemView {
         [themeSelect, fontSelect].forEach(select => {
             if (select) {
                 select.classList.toggle('disabled', !enabled);
-                select.setAttribute('style', `pointer-events: ${enabled ? 'auto' : 'none'}`);
+                (select as HTMLElement).setCssProps({ 'pointer-events': enabled ? 'auto' : 'none' });
             }
         });
 
@@ -476,10 +485,10 @@ export class MPView extends ItemView {
     onFileModify(file: TFile): void {
         if (file === this.currentFile) {
             if (this.updateTimer) {
-                clearTimeout(this.updateTimer);
+                window.clearTimeout(this.updateTimer);
             }
 
-            this.updateTimer = setTimeout(() => {
+            this.updateTimer = window.setTimeout(() => {
                 this.updatePreview();
             }, 500);
         }
@@ -514,7 +523,7 @@ export class MPView extends ItemView {
 
         // 根据滚动位置决定是否自动滚动
         if (isAtBottom) {
-            requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
                 this.previewEl.scrollTop = this.previewEl.scrollHeight;
             });
         } else {
@@ -568,7 +577,7 @@ export class MPView extends ItemView {
             dropdown.classList.toggle('show');
         });
 
-        document.addEventListener('click', () => {
+        activeDocument.addEventListener('click', () => {
             dropdown.classList.remove('show');
         });
 
@@ -583,10 +592,10 @@ export class MPView extends ItemView {
         }
 
         // 按来源分组：内置 → 社区投稿 → 本地自定义 → 其他
-        const builtinThemes = allThemes.filter(t => t.source === 'builtin');
-        const communityThemes = allThemes.filter(t => t.source === 'community');
-        const localThemes = allThemes.filter(t => t.source === 'local');
-        const otherThemes = allThemes.filter(t => !['builtin', 'community', 'local'].includes(t.source));
+        const builtinThemes = allThemes.filter(t => t.source === ThemeSource.BUILTIN);
+        const communityThemes = allThemes.filter(t => t.source === ThemeSource.COMMUNITY);
+        const localThemes = allThemes.filter(t => t.source === ThemeSource.LOCAL);
+        const otherThemes = allThemes.filter(t => ![ThemeSource.BUILTIN, ThemeSource.COMMUNITY, ThemeSource.LOCAL].includes(t.source));
         const sortedThemes = [...builtinThemes, ...communityThemes, ...localThemes, ...otherThemes];
 
         return sortedThemes.map(theme => ({ value: theme.id, label: theme.name }));

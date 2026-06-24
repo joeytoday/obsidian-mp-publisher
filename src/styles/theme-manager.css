@@ -547,8 +547,8 @@
 
 /* ---- 隐藏 ---- */
 
-.mp-tm-hidden {
-    display: none !important;
+.mp-tm-hidden.mp-tm-hidden {
+    display: none;
 }
 
 /* ---- CSS 编辑器区域（新建主题） ---- */

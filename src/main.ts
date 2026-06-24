@@ -90,15 +90,15 @@ export default class MPPublisherPlugin extends Plugin {
 
     // 添加功能按钮
     this.addRibbonIcon('send', '打开公众号发布', () => {
-      this.activateView();
+      void this.activateView();
     });
 
     // 添加打开预览命令
     this.addCommand({
       id: 'open-preview',
       name: '打开公众号发布插件',
-      callback: async () => {
-        await this.activateView();
+      callback: () => {
+        void this.activateView();
       },
     });
 
@@ -106,8 +106,8 @@ export default class MPPublisherPlugin extends Plugin {
     this.addCommand({
       id: 'theme-manager',
       name: '打开主题管理',
-      callback: async () => {
-        await this.activateThemeManager();
+      callback: () => {
+        void this.activateThemeManager();
       },
     });
 

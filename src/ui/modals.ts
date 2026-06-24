@@ -1,4 +1,4 @@
-import { App, MarkdownView, Modal, Notice, Setting, TFile } from 'obsidian';
+import { App, MarkdownView, Modal, Notice, Setting } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
 // 封面图选择模态框
@@ -279,52 +279,54 @@ export class CoverImageModal extends Modal {
 		});
 
 		// 本地图片确认按钮事件
-		localConfirmButton.addEventListener('click', async () => {
-			const selectedFileInfo = sessionStorage.getItem('selected_file');
-			const previewImageUrl = sessionStorage.getItem('preview_image_url');
+		localConfirmButton.addEventListener('click', () => {
+			void (async () => {
+				const selectedFileInfo = sessionStorage.getItem('selected_file');
+				const previewImageUrl = sessionStorage.getItem('preview_image_url');
 
-			if (!selectedFileInfo || !previewImageUrl || !selectedFileData) {
-				new Notice('请先选择图片');
-				return;
-			}
-
-			const fileInfo = JSON.parse(selectedFileInfo);
-
-			// 立即上传图片到微信获取 media_id
-			localConfirmButton.disabled = true;
-			localConfirmButton.textContent = '正在上传...';
-
-			try {
-				const mediaId = await this.plugin.wechatPublisher.uploadImageToWechat(
-					selectedFileData,
-					fileInfo.name,
-					this.accountId
-				);
-
-				if (!mediaId) {
-					new Notice('上传封面图失败，请重试');
-					localConfirmButton.disabled = false;
-					localConfirmButton.textContent = '确认';
+				if (!selectedFileInfo || !previewImageUrl || !selectedFileData) {
+					new Notice('请先选择图片');
 					return;
 				}
 
-				// 保存上传成功的图片信息
-				sessionStorage.setItem('selected_material', JSON.stringify({
-					media_id: mediaId,
-					url: previewImageUrl,
-					name: fileInfo.name,
-					isLocal: false  // 已经上传到微信，不再是本地图片
-				}));
+				const fileInfo = JSON.parse(selectedFileInfo);
 
-				this.onImageSelected(mediaId);
-				new Notice('封面图上传成功');
-				this.close();
-			} catch (error) {
-				console.error('上传封面图失败:', error);
-				new Notice('上传封面图失败：' + (error.message || '未知错误'));
-				localConfirmButton.disabled = false;
-				localConfirmButton.textContent = '确认';
-			}
+				// 立即上传图片到微信获取 media_id
+				localConfirmButton.disabled = true;
+				localConfirmButton.textContent = '正在上传...';
+
+				try {
+					const mediaId = await this.plugin.wechatPublisher.uploadImageToWechat(
+						selectedFileData,
+						fileInfo.name,
+						this.accountId
+					);
+
+					if (!mediaId) {
+						new Notice('上传封面图失败，请重试');
+						localConfirmButton.disabled = false;
+						localConfirmButton.textContent = '确认';
+						return;
+					}
+
+					// 保存上传成功的图片信息
+					sessionStorage.setItem('selected_material', JSON.stringify({
+						media_id: mediaId,
+						url: previewImageUrl,
+						name: fileInfo.name,
+						isLocal: false  // 已经上传到微信，不再是本地图片
+					}));
+
+					this.onImageSelected(mediaId);
+					new Notice('封面图上传成功');
+					this.close();
+				} catch (error) {
+					console.error('上传封面图失败:', error);
+					new Notice('上传封面图失败：' + (error.message || '未知错误'));
+					localConfirmButton.disabled = false;
+					localConfirmButton.textContent = '确认';
+				}
+			})();
 		});
 
 		// 分页按钮事件
@@ -383,7 +385,7 @@ export class PublishModal extends Modal {
 			.setName('标题')
 			.setDesc('文章标题');
 
-		this.titleInput = document.createElement('input');
+		this.titleInput = activeDocument.createElement('input');
 		this.titleInput.type = 'text';
 		this.titleInput.value = this.markdownView.file?.basename || '';
 		this.titleInput.className = 'full-width-input';
@@ -395,10 +397,10 @@ export class PublishModal extends Modal {
 			.setName('平台')
 			.setDesc('目前只支持微信公众号');
 
-		this.platformSelect = document.createElement('select');
+		this.platformSelect = activeDocument.createElement('select');
 		this.platformSelect.className = 'enhanced-publisher-platform-selector';
 
-		const wechatOption = document.createElement('option');
+		const wechatOption = activeDocument.createElement('option');
 		wechatOption.value = 'wechat';
 		wechatOption.text = '微信公众号';
 		this.platformSelect.appendChild(wechatOption);
@@ -413,18 +415,18 @@ export class PublishModal extends Modal {
 			.setName('公众号')
 			.setDesc('选择要发布到的公众号');
 
-		this.accountSelect = document.createElement('select');
+		this.accountSelect = activeDocument.createElement('select');
 		this.accountSelect.className = 'enhanced-publisher-platform-selector';
 
 		if (accounts.length === 0) {
-			const emptyOption = document.createElement('option');
+			const emptyOption = activeDocument.createElement('option');
 			emptyOption.value = '';
 			emptyOption.text = '请先在设置中添加公众号';
 			this.accountSelect.appendChild(emptyOption);
 			this.accountSelect.disabled = true;
 		} else {
 			for (const account of accounts) {
-				const option = document.createElement('option');
+				const option = activeDocument.createElement('option');
 				option.value = account.id;
 				option.text = account.name || `公众号 (${account.appId.slice(0, 6)}...)`;
 				if (account.id === activeAccountId) {
@@ -441,7 +443,7 @@ export class PublishModal extends Modal {
 			.setName('草稿')
 			.setDesc('当前仅支持保存到草稿箱，后续将支持直接发布');
 
-		const draftCheckbox = document.createElement('input');
+		const draftCheckbox = activeDocument.createElement('input');
 		draftCheckbox.type = 'checkbox';
 		draftCheckbox.checked = true;
 		draftCheckbox.disabled = true;
@@ -453,16 +455,16 @@ export class PublishModal extends Modal {
 			.setDesc('选择文章封面图');
 
 		// 创建封面图选择区域的容器
-		const coverImageContainer = document.createElement('div');
+		const coverImageContainer = activeDocument.createElement('div');
 		coverImageContainer.className = 'cover-container';
 
 		// 封面图预览区域
-		this.coverImagePreview = document.createElement('div');
+		this.coverImagePreview = activeDocument.createElement('div');
 		this.coverImagePreview.className = 'cover-preview';
 		this.coverImagePreview.textContent = '无封面图';
 
 		// 选择按钮
-		const selectCoverButton = document.createElement('button');
+		const selectCoverButton = activeDocument.createElement('button');
 		selectCoverButton.className = 'mod-cta';
 		selectCoverButton.textContent = '选择封面图';
 		selectCoverButton.addEventListener('click', () => {
@@ -473,7 +475,7 @@ export class PublishModal extends Modal {
 
 				// 更新预览区域
 				this.coverImagePreview.empty();
-				const img = document.createElement('img') as HTMLImageElement;
+				const img = activeDocument.createElement('img');
 				img.className = 'preview-image';
 
 				// 从sessionStorage获取选中的素材信息
@@ -509,84 +511,86 @@ export class PublishModal extends Modal {
 			cls: 'enhanced-publisher-publish-button'
 		});
 
-		publishButton.addEventListener('click', async () => {
-			const title = this.titleInput.value;
-			const platform = this.platformSelect.value;
+		publishButton.addEventListener('click', () => {
+			void (async () => {
+				const title = this.titleInput.value;
+				const platform = this.platformSelect.value;
 
-			if (!title) {
-				new Notice('请输入标题');
-				return;
-			}
-
-			if (platform === 'wechat' && !this.coverImagePreview.querySelector('img')) {
-				new Notice('请选择封面图');
-				return;
-			}
-
-			if (!this.markdownView.file) {
-				new Notice('无法获取当前文件');
-				return;
-			}
-
-			// 使用 markdownToHtml 渲染内容（通过 juice 内联 CSS，确保样式在公众号后台正确显示）
-			const content = this.markdownView.getViewData();
-			const htmlContent = await markdownToHtml(
-				this.app,
-				content,
-				this.markdownView.file?.path || '',
-				this.plugin.themeManager,
-				this.plugin.settings.convertMathToSVG,
-			);
-
-			if (platform === 'wechat') {
-				// 获取选中的公众号账号
-				const selectedAccountId = this.accountSelect.value;
-				const selectedAccount = this.plugin.settingsManager.getWechatAccountById(selectedAccountId);
-
-				if (!selectedAccount || !selectedAccount.appId || !selectedAccount.appSecret) {
-					new Notice('请先在设置中配置公众号的 AppID 和 AppSecret');
+				if (!title) {
+					new Notice('请输入标题');
 					return;
 				}
 
-				// 检查是否选择了封面图
-				if (!this.selectedCoverMediaId) {
-					new Notice('请先选择封面图');
+				if (platform === 'wechat' && !this.coverImagePreview.querySelector('img')) {
+					new Notice('请选择封面图');
 					return;
 				}
 
-				try {
-					// 获取选中的封面图 media_id
-					const selectedMaterial = sessionStorage.getItem('selected_material');
-					if (selectedMaterial) {
-						const material = JSON.parse(selectedMaterial);
-						this.selectedCoverMediaId = material.media_id;
-					}
+				if (!this.markdownView.file) {
+					new Notice('无法获取当前文件');
+					return;
+				}
 
-					// 再次检查 media_id 是否有效
-					if (!this.selectedCoverMediaId) {
-						new Notice('封面图 media_id 无效，请重新选择封面图');
+				// 使用 markdownToHtml 渲染内容（通过 juice 内联 CSS，确保样式在公众号后台正确显示）
+				const content = this.markdownView.getViewData();
+				const htmlContent = await markdownToHtml(
+					this.app,
+					content,
+					this.markdownView.file?.path || '',
+					this.plugin.themeManager,
+					this.plugin.settings.convertMathToSVG,
+				);
+
+				if (platform === 'wechat') {
+					// 获取选中的公众号账号
+					const selectedAccountId = this.accountSelect.value;
+					const selectedAccount = this.plugin.settingsManager.getWechatAccountById(selectedAccountId);
+
+					if (!selectedAccount || !selectedAccount.appId || !selectedAccount.appSecret) {
+						new Notice('请先在设置中配置公众号的 AppID 和 AppSecret');
 						return;
 					}
 
-					publishButton.textContent = '正在发布...';
-					const success = await this.plugin.publishToWechat(
-						title,
-						htmlContent,
-						this.selectedCoverMediaId,
-						this.markdownView.file,
-						selectedAccountId
-					);
-
-					if (success) {
-						this.close();
+					// 检查是否选择了封面图
+					if (!this.selectedCoverMediaId) {
+						new Notice('请先选择封面图');
+						return;
 					}
-				} catch (error) {
-					console.error('发布失败:', error);
-					new Notice('发布失败：' + (error.message || '未知错误'));
-					publishButton.disabled = false;
-					publishButton.textContent = '发布';
+
+					try {
+						// 获取选中的封面图 media_id
+						const selectedMaterial = sessionStorage.getItem('selected_material');
+						if (selectedMaterial) {
+							const material = JSON.parse(selectedMaterial);
+							this.selectedCoverMediaId = material.media_id;
+						}
+
+						// 再次检查 media_id 是否有效
+						if (!this.selectedCoverMediaId) {
+							new Notice('封面图 media_id 无效，请重新选择封面图');
+							return;
+						}
+
+						publishButton.textContent = '正在发布...';
+						const success = await this.plugin.publishToWechat(
+							title,
+							htmlContent,
+							this.selectedCoverMediaId,
+							this.markdownView.file,
+							selectedAccountId
+						);
+
+						if (success) {
+							this.close();
+						}
+					} catch (error) {
+						console.error('发布失败:', error);
+						new Notice('发布失败：' + (error.message || '未知错误'));
+						publishButton.disabled = false;
+						publishButton.textContent = '发布';
+					}
 				}
-			}
+			})();
 		});
 	}
 

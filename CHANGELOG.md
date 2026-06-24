@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.6.1] - 2026-06-24
+
+### 🔧 代码规范
+
+- 最低支持版本提升至 1.13.0
+- 使用 Obsidian 规范 API：`setCssProps` 替代直接 style 赋值、`sanitizeHTMLToDom` 替代 innerHTML、`activeDocument` 替代 `document`、`window.setTimeout` 替代 `setTimeout`、`RequestUrlResponse` 替代 `any` 类型
+- 移除不允许的 eslint-disable 注释，用 `window.fetch` 替代全局 `fetch`、用精确类型替代 `any`
+- 定义 `LeafWithUpdateHeader` 接口替代 `as any` 访问内部 API
+- async 回调改为 `void (async () => { ... })()` 模式，避免 Promise 未处理
+- 移除 await 非 Promise 的调用
+- enum 比较使用枚举值替代字符串字面量
+- CSS `!important` 替换为更高选择器特异性
+- `builtin-modules` 依赖替换为 Node.js 内置 `module.builtinModules`
+- README 添加英文标题和描述
+
+### 🐛 Bug 修复
+
+- CSS 内联失败时显示提示，不再静默忽略
+- 列表转换增加迭代上限防护，避免极端嵌套场景下无限循环
+
+### 🎨 优化
+
+- 列表处理逻辑统一为共享函数，复制和发布流程保持一致
+
+---
+
 ## [2.5.4] - 2026-06-23
 
 ### 🐛 Bug 修复
