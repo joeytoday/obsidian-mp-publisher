@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.2] - 2026-06-24
+
+### 🔧 代码规范
+
+- 微信 API 响应定义精确接口类型，替代 `any` 直接访问
+- `JSON.parse` 结果添加类型标注（素材缓存、Token 缓存、sessionStorage 数据）
+- `catch (error)` 改为 `catch (error: unknown)`，用 `instanceof Error` 替代直接访问属性
+- Logger 方法参数 `any[]` → `unknown[]`
+- `setCssProps` 使用 camelCase 属性名（`pointerEvents`）
+- Promise 调用加 `void` 前缀，避免未处理警告
+- 移除 `asWechatResponse` 辅助函数（含禁止的 eslint-disable）
+- 移除未使用的 `parseCssString` 导入
+- `text-indent: 0px` → `text-indent: 0`（兼容性）
+- README 补充英文安装说明和使用指南
+- ConfirmModal 支持 async onConfirm 回调
+
+---
+
 ## [2.6.1] - 2026-06-24
 
 ### 🔧 代码规范

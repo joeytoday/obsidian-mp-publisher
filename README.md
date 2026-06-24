@@ -6,6 +6,50 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 **English description** | [中文说明](#-功能特点)
 
+## 🌟 Overview
+
+MP Publisher is an Obsidian plugin for writing and publishing articles to WeChat Official Account (微信公众号). It provides real-time preview with customizable CSS themes, one-click copy/paste to the WeChat editor, and direct API publishing to the draft box.
+
+**Key features:**
+- **8 built-in CSS themes** + local custom themes via `custom/` folder
+- **Theme management view** — browse, switch, create, edit, rename, delete themes
+- **Real-time preview** — see your article as it will appear in WeChat
+- **Smart publishing** — upload images, select cover art, create/update drafts via WeChat API
+- **One-click copy** — formatted HTML with inline CSS, paste directly into the WeChat editor
+- **LaTeX math** — renders `$...$` / `$$...$$` formulas as PNG images
+- **30+ Callout types** — note, tip, warning, danger, etc. with theme-adapted styling
+- **Multi-account support** — manage multiple WeChat Official Accounts
+
+📖 Read the [CSS Theme Guide](./CSS_THEME_GUIDE.md) before writing custom themes.
+
+## 📦 Installation
+
+### Via BRAT (recommended)
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Obsidian community plugins
+2. Open BRAT settings → **Add beta plugin**
+3. Paste: `https://github.com/joeytoday/obsidian-mp-publisher`
+4. Confirm and enable the plugin in Obsidian settings
+
+### Manual installation
+1. Download `mp-publisher.zip` from [Releases](https://github.com/joeytoday/obsidian-mp-publisher/releases)
+2. Unzip into `<vault>/.obsidian/plugins/`
+3. Reload Obsidian and enable the plugin
+
+## 🚀 Quick Start
+
+### Step 1: Configure WeChat API
+1. Log into [WeChat MP Platform](https://mp.weixin.qq.com/) → Settings & Development → Basic Configuration
+2. Note your `AppID` and `AppSecret`
+3. Add your IP to the whitelist (or set `0.0.0.0/0` if your IP changes frequently)
+4. In Obsidian → Settings → MP Publisher, enter AppID and AppSecret
+
+### Step 2: Preview & Publish
+- **Preview**: Click the 📤 icon in the left sidebar, or run the command "Open MP Publisher"
+- **Copy**: Click "Copy to WeChat" → paste into the WeChat editor (Ctrl+V / Cmd+V)
+- **Publish**: Click "Publish" → enter title → select cover image → confirm
+
+Published articles appear in WeChat MP Platform → Content & Interaction → Drafts.
+
 ## ✨ Features
 
 ### 🎨 纯 CSS 主题系统

@@ -61,7 +61,7 @@ export class MPView extends ItemView {
             attr: { 'aria-label': '刷新预览' },
         });
         setIcon(this.refreshButton, 'refresh-cw');
-        this.refreshButton.addEventListener('click', () => this.forceRefreshPreview());
+        this.refreshButton.addEventListener('click', () => void this.forceRefreshPreview());
 
         // 主题选择器
         const themeOptions = this.getThemeOptions();
@@ -150,7 +150,7 @@ export class MPView extends ItemView {
             const currentSize = parseInt(this.fontSizeSelect.value);
             if (currentSize > 12) {
                 this.fontSizeSelect.value = (currentSize - 1).toString();
-                updateFontSize();
+                void updateFontSize();
             }
         });
 
@@ -158,7 +158,7 @@ export class MPView extends ItemView {
             const currentSize = parseInt(this.fontSizeSelect.value);
             if (currentSize < 30) {
                 this.fontSizeSelect.value = (currentSize + 1).toString();
-                updateFontSize();
+                void updateFontSize();
             }
         });
 
@@ -428,7 +428,7 @@ export class MPView extends ItemView {
         [themeSelect, fontSelect].forEach(select => {
             if (select) {
                 select.classList.toggle('disabled', !enabled);
-                (select as HTMLElement).setCssProps({ 'pointer-events': enabled ? 'auto' : 'none' });
+                (select as HTMLElement).setCssProps({ pointerEvents: enabled ? 'auto' : 'none' });
             }
         });
 
@@ -489,7 +489,7 @@ export class MPView extends ItemView {
             }
 
             this.updateTimer = window.setTimeout(() => {
-                this.updatePreview();
+                void this.updatePreview();
             }, 500);
         }
     }

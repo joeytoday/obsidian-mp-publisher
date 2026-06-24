@@ -460,7 +460,7 @@ export class ThemeManager {
             });
 
             if (response.status === 200 && Array.isArray(response.json)) {
-                const themeIndex: RemoteThemeIndex[] = response.json;
+                const themeIndex = response.json as RemoteThemeIndex[];
 
                 // 更新缓存
                 await this.plugin.settingsManager.updateSettings({

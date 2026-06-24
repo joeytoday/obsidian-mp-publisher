@@ -38,7 +38,7 @@ export class MPSettingTab extends PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('打开')
                 .onClick(() => {
-                    this.plugin.activateThemeManager();
+                    void this.plugin.activateThemeManager();
                 }));
 
         // ── 公众号 ──────────────────────────────────
@@ -215,7 +215,7 @@ export class MPSettingTab extends PluginSettingTab {
     private async openDocView(viewType: string): Promise<void> {
         const leaves = this.app.workspace.getLeavesOfType(viewType);
         if (leaves.length > 0) {
-            this.app.workspace.revealLeaf(leaves[0]);
+            void this.app.workspace.revealLeaf(leaves[0]);
             return;
         }
         const leaf = this.app.workspace.getLeaf(true);

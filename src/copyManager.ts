@@ -1,5 +1,4 @@
 import { Notice, requestUrl, sanitizeHTMLToDom } from 'obsidian';
-import { parseCssString } from './utils/css-props';
 import { processListItems } from './utils/dom-utils';
 
 export class CopyManager {

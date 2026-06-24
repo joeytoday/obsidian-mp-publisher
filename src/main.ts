@@ -135,7 +135,7 @@ export default class MPPublisherPlugin extends Plugin {
   async activateView() {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MP);
     if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+      void this.app.workspace.revealLeaf(leaves[0]);
       return;
     }
 
@@ -153,7 +153,7 @@ export default class MPPublisherPlugin extends Plugin {
   async activateThemeManager() {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_THEME_MANAGER);
     if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+      void this.app.workspace.revealLeaf(leaves[0]);
       return;
     }
 
