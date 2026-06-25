@@ -402,7 +402,7 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 本软件采用 **双重许可** 模式：
 
 - **开源使用**：[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) — 可自由使用和修改，但衍生作品必须以相同协议开源
-- **商业使用**：需要商业授权，请联系作者（joeykai2022@126.com）
+- **商业使用**：需要商业授权，请联系作者（joeytoday632@outlook.com）
 
 详见 [LICENSE](LICENSE) 文件。
 
