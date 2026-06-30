@@ -169,8 +169,8 @@ export default class MPPublisherPlugin extends Plugin {
   }
 
   // 包装微信发布功能供UI调用
-  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile, accountId?: string): Promise<boolean> {
-    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file, accountId);
+  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile, accountId?: string, digest: string = ''): Promise<boolean> {
+    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file, accountId, digest);
   }
 
   onunload() {

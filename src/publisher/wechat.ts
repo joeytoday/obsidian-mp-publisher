@@ -588,7 +588,8 @@ export class WechatPublisher {
         content: string,
         thumb_media_id: string,
         file: TFile,
-        accountId?: string
+        accountId?: string,
+        digest: string = ''
     ): Promise<boolean> {
         try {
             // 获取进度指示器
@@ -649,7 +650,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,
@@ -668,7 +669,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,
@@ -697,7 +698,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,

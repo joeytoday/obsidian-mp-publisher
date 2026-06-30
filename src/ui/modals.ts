@@ -370,6 +370,7 @@ export class PublishModal extends Modal {
 	plugin: MPPlugin;
 	markdownView: MarkdownView;
 	titleInput: HTMLInputElement;
+	descriptionInput: HTMLInputElement;
 	platformSelect: HTMLSelectElement;
 	accountSelect: HTMLSelectElement;
 	coverImagePreview: HTMLElement;
@@ -405,6 +406,38 @@ export class PublishModal extends Modal {
 
 		titleSetting.controlEl.appendChild(this.titleInput);
 
+		// 描述输入
+		const descSetting = new Setting(contentEl)
+			.setName('描述')
+			.setDesc('文章摘要，显示在公众号消息列表中');
+
+		this.descriptionInput = activeDocument.createElement('input');
+		this.descriptionInput.type = 'text';
+		this.descriptionInput.className = 'full-width-input';
+
+		descSetting.controlEl.appendChild(this.descriptionInput);
+
+		// 从 frontmatter 提取标题和描述
+		if (this.plugin.settings.extractFromFrontmatter) {
+			const file = this.markdownView.file;
+			if (file) {
+				const cache = this.app.metadataCache.getFileCache(file);
+				const frontmatter = cache?.frontmatter;
+				if (frontmatter) {
+					const titleKey = this.plugin.settings.frontmatterTitleKey;
+					const descKey = this.plugin.settings.frontmatterDescriptionKey;
+					const titleValue = frontmatter[titleKey];
+					if (typeof titleValue === 'string' && titleValue) {
+						this.titleInput.value = titleValue;
+					}
+					const descValue = frontmatter[descKey];
+					if (typeof descValue === 'string' && descValue) {
+						this.descriptionInput.value = descValue;
+					}
+				}
+			}
+		}
+
 		// 平台选择
 		const platformSetting = new Setting(contentEl)
 			.setName('平台')
@@ -426,7 +459,7 @@ export class PublishModal extends Modal {
 
 		const accountSetting = new Setting(contentEl)
 			.setName('公众号')
-			.setDesc('选择要发布到的公众号');
+			.setDesc('选择要发布到的公众号，内容将保存到草稿箱');
 
 		this.accountSelect = activeDocument.createElement('select');
 		this.accountSelect.className = 'enhanced-publisher-platform-selector';
@@ -451,35 +484,21 @@ export class PublishModal extends Modal {
 
 		accountSetting.controlEl.appendChild(this.accountSelect);
 
-		// 添加草稿复选框
-		const draftSetting = new Setting(contentEl)
-			.setName('草稿')
-			.setDesc('当前仅支持保存到草稿箱，后续将支持直接发布');
+		// 封面图选择
+		const coverSetting = contentEl.createDiv({ cls: 'cover-setting' });
 
-		const draftCheckbox = activeDocument.createElement('input');
-		draftCheckbox.type = 'checkbox';
-		draftCheckbox.checked = true;
-		draftCheckbox.disabled = true;
-		draftSetting.controlEl.appendChild(draftCheckbox);
+		const coverLeft = coverSetting.createDiv({ cls: 'cover-setting-left' });
+		coverLeft.createDiv({ cls: 'cover-setting-label', text: '封面图' });
+		coverLeft.createDiv({ cls: 'cover-setting-desc', text: '选择文章封面图' });
 
-		// 封面图选择（仅对微信公众号显示）
-		const coverImageSetting = new Setting(contentEl)
-			.setName('封面图')
-			.setDesc('选择文章封面图');
+		const selectCoverButton = coverLeft.createEl('button', {
+			cls: 'mod-cta',
+			text: '选择封面图'
+		});
 
-		// 创建封面图选择区域的容器
-		const coverImageContainer = activeDocument.createElement('div');
-		coverImageContainer.className = 'cover-container';
-
-		// 封面图预览区域
-		this.coverImagePreview = activeDocument.createElement('div');
-		this.coverImagePreview.className = 'cover-preview';
+		const coverRight = coverSetting.createDiv({ cls: 'cover-setting-right' });
+		this.coverImagePreview = coverRight.createDiv({ cls: 'cover-preview' });
 		this.coverImagePreview.textContent = '无封面图';
-
-		// 选择按钮
-		const selectCoverButton = activeDocument.createElement('button');
-		selectCoverButton.className = 'mod-cta';
-		selectCoverButton.textContent = '选择封面图';
 		selectCoverButton.addEventListener('click', () => {
 			// 打开封面图选择模态框
 			const selectedAccountId = this.accountSelect.value;
@@ -507,11 +526,6 @@ export class PublishModal extends Modal {
 			}, selectedAccountId);
 			coverImageModal.open();
 		});
-
-		coverImageContainer.appendChild(this.coverImagePreview);
-		coverImageContainer.appendChild(selectCoverButton);
-
-		coverImageSetting.controlEl.appendChild(coverImageContainer);
 
 		// 创建发布按钮容器并居中
 		const publishButtonContainer = contentEl.createDiv({
@@ -590,7 +604,8 @@ export class PublishModal extends Modal {
 							htmlContent,
 							this.selectedCoverMediaId,
 							this.markdownView.file,
-							selectedAccountId
+							selectedAccountId,
+							this.descriptionInput.value
 						);
 
 						if (success) {
