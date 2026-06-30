@@ -2,6 +2,8 @@
 
 一个强大的 Obsidian 插件，支持自定义 CSS 主题预览和一键发布到微信公众号。
 
+👇 查看演示
+
 https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 **中文说明** | [English](#-english)
@@ -17,6 +19,8 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 ## 🌟 简介
 
 MP Publisher 是一个 Obsidian 插件，用于撰写文章并发布到微信公众号。它提供实时预览（支持自定义 CSS 主题）、一键复制粘贴到微信编辑器、以及通过 API 直接发布到草稿箱。
+
+<img width="1435" height="836" alt="20260617-1" src="https://github.com/user-attachments/assets/5a71f624-ffe4-498d-9d08-6eb1b81c239f" />
 
 ## ✨ 功能特点
 
