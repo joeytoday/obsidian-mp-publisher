@@ -414,6 +414,8 @@ export class PublishModal extends Modal {
 		this.descriptionInput = activeDocument.createElement('input');
 		this.descriptionInput.type = 'text';
 		this.descriptionInput.className = 'full-width-input';
+		this.descriptionInput.placeholder = '可选，120字以内';
+		this.descriptionInput.maxLength = 120;
 
 		descSetting.controlEl.appendChild(this.descriptionInput);
 

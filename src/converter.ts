@@ -87,6 +87,70 @@ export class MPConverter {
                 console.error('图片处理失败:', error);
             }
         });
+
+        // 5. 处理链接：外部链接转脚注，内部链接转纯文本
+        this.processLinksToFootnotes(container);
+    }
+
+    private static processLinksToFootnotes(container: HTMLElement): void {
+        try {
+            const urlToNum = new Map<string, number>();
+            const footnotes: string[] = [];
+
+            container.querySelectorAll('a').forEach(a => {
+                if (a.closest('pre')) return;
+
+                if (a.classList.contains('internal-link')) {
+                    const linkText = a.textContent || a.getAttribute('data-href') || '';
+                    a.replaceWith(activeDocument.createTextNode(linkText));
+                    return;
+                }
+
+                const href = a.getAttribute('href') || '';
+                if (href.startsWith('http://') || href.startsWith('https://')) {
+                    let num = urlToNum.get(href);
+                    if (num === undefined) {
+                        num = footnotes.length + 1;
+                        urlToNum.set(href, num);
+                        footnotes.push(href);
+                    }
+
+                    const sup = activeDocument.createElement('sup');
+                    sup.setCssProps(parseCssString('font-size: 0.75em;'));
+                    sup.textContent = String(num);
+
+                    const fragment = activeDocument.createDocumentFragment();
+                    while (a.firstChild) {
+                        fragment.appendChild(a.firstChild);
+                    }
+                    if (!fragment.childNodes.length) {
+                        fragment.appendChild(activeDocument.createTextNode(href));
+                    }
+                    fragment.appendChild(sup);
+                    a.replaceWith(fragment);
+                }
+            });
+
+            if (footnotes.length > 0) {
+                const fnSection = activeDocument.createElement('section');
+                fnSection.setCssProps(parseCssString(
+                    'margin-top: 1.5em; padding-top: 0.75em; border-top: 1px solid #e0e0e0;'
+                ));
+
+                footnotes.forEach((url, i) => {
+                    const item = activeDocument.createElement('section');
+                    item.setCssProps(parseCssString(
+                        'font-size: 0.85em; color: #888; margin: 0.25em 0;'
+                    ));
+                    item.textContent = `[${i + 1}] ${url}`;
+                    fnSection.appendChild(item);
+                });
+
+                container.appendChild(fnSection);
+            }
+        } catch (error) {
+            console.error('[mp-publisher] 链接转脚注失败:', error);
+        }
     }
 
     /**
