@@ -31,6 +31,10 @@ export interface MPSettings {
     hiddenThemeIds: string[];
     // 数学公式设置
     convertMathToSVG: boolean;
+    // 从 frontmatter 提取标题和描述
+    extractFromFrontmatter: boolean;
+    frontmatterTitleKey: string;
+    frontmatterDescriptionKey: string;
 }
 
 const DEFAULT_SETTINGS: MPSettings = {
@@ -53,6 +57,10 @@ const DEFAULT_SETTINGS: MPSettings = {
     hiddenThemeIds: [],
     // 数学公式默认设置
     convertMathToSVG: true,
+    // 从 frontmatter 提取标题和描述（默认关闭）
+    extractFromFrontmatter: false,
+    frontmatterTitleKey: 'title',
+    frontmatterDescriptionKey: 'description',
 };
 
 export class SettingsManager {

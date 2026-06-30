@@ -85,6 +85,47 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                 }));
 
+        new Setting(containerEl)
+            .setName('从属性提取标题和描述')
+            .setDesc('开启后，发布时自动从 Markdown 属性中提取标题和描述，填充到发布表单')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().extractFromFrontmatter)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        extractFromFrontmatter: value,
+                    });
+                    titleKeySetting.settingEl.toggle(value);
+                    descKeySetting.settingEl.toggle(value);
+                }));
+
+        const titleKeySetting = new Setting(containerEl)
+            .setName('标题属性名')
+            .setDesc('属性中标题对应的字段名')
+            .addText(text => text
+                .setPlaceholder('title')
+                .setValue(this.plugin.settingsManager.getSettings().frontmatterTitleKey)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        frontmatterTitleKey: value || 'title',
+                    });
+                }));
+
+        const descKeySetting = new Setting(containerEl)
+            .setName('描述属性名')
+            .setDesc('属性中描述对应的字段名')
+            .addText(text => text
+                .setPlaceholder('description')
+                .setValue(this.plugin.settingsManager.getSettings().frontmatterDescriptionKey)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        frontmatterDescriptionKey: value || 'description',
+                    });
+                }));
+
+        const isExtractEnabled = this.plugin.settingsManager.getSettings().extractFromFrontmatter;
+        titleKeySetting.settingEl.toggle(isExtractEnabled);
+        descKeySetting.settingEl.toggle(isExtractEnabled);
+
         // ── 其他 ──────────────────────────────────
 
         new Setting(containerEl)
