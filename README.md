@@ -16,11 +16,15 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 - 🎨 **自定义 CSS 主题** — 在 `custom/` 文件夹放置 `.css` 文件即可加载，自由打造你的排版风格
 - 🗂️ **自由的主题管理页面** — 独立视图管理主题：浏览、切换、新建、编辑、重命名、删除，一站搞定
 
-## 🌟 简介
-
 MP Publisher 是一个 Obsidian 插件，用于撰写文章并发布到微信公众号。它提供实时预览（支持自定义 CSS 主题）、一键复制粘贴到微信编辑器、以及通过 API 直接发布到草稿箱。
 
 <img width="1435" height="836" alt="20260617-1" src="https://github.com/user-attachments/assets/5a71f624-ffe4-498d-9d08-6eb1b81c239f" />
+
+## ☕️ 支持作者
+
+如果插件帮助到您，欢迎请作者喝杯咖啡～
+
+<img width="200" align="center" alt="wechat-qrcode B_u09Tgq_Z2qC86T" src="https://github.com/user-attachments/assets/c849f9cf-8ed2-443f-9f27-01cd9fc65f13" />
 
 ## ✨ 功能特点
 
@@ -370,11 +374,6 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 
 详见 [LICENSE](LICENSE) 文件。
 
-## ☕️ 支持作者
-
-如果插件帮助到您，欢迎请作者喝杯咖啡～
-
-<img width="150" alt="wechat-qrcode B_u09Tgq_Z2qC86T" src="https://github.com/user-attachments/assets/c849f9cf-8ed2-443f-9f27-01cd9fc65f13" />
 
 ## 🙏 致谢
 
