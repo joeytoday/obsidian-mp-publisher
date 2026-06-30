@@ -117,7 +117,7 @@ export class MPConverter {
 
                     const sup = activeDocument.createElement('sup');
                     sup.setCssProps(parseCssString('font-size: 0.75em;'));
-                    sup.textContent = String(num);
+                    sup.textContent = `[${num}]`;
 
                     const fragment = activeDocument.createDocumentFragment();
                     while (a.firstChild) {
