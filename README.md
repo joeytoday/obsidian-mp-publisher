@@ -1,56 +1,24 @@
-# MP Publisher - WeChat Official Account Publishing Plugin
+# MP Publisher - 微信公众号发布插件
 
-A powerful Obsidian plugin that supports custom CSS theme preview and one-click publishing to WeChat Official Account (公众号).
+一个强大的 Obsidian 插件，支持自定义 CSS 主题预览和一键发布到微信公众号。
 
 https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
-**English description** | [中文说明](#-功能特点)
+**中文说明** | [English](#-english)
 
-## 🌟 Overview
+## ✨ 为什么选择 MP Publisher
 
-MP Publisher is an Obsidian plugin for writing and publishing articles to WeChat Official Account (微信公众号). It provides real-time preview with customizable CSS themes, one-click copy/paste to the WeChat editor, and direct API publishing to the draft box.
+- 🎉 **已上架 Obsidian 社区插件市场** — 在 Obsidian 设置中直接搜索安装，无需任何额外步骤
+- 💰 **完全免费** — 所有功能开源免费，无任何付费墙
+- 📱 **多公众号支持** — 同时管理多个微信公众号，一键切换
+- 🎨 **自定义 CSS 主题** — 在 `custom/` 文件夹放置 `.css` 文件即可加载，自由打造你的排版风格
+- 🗂️ **自由的主题管理页面** — 独立视图管理主题：浏览、切换、新建、编辑、重命名、删除，一站搞定
 
-**Key features:**
-- **8 built-in CSS themes** + local custom themes via `custom/` folder
-- **Theme management view** — browse, switch, create, edit, rename, delete themes
-- **Real-time preview** — see your article as it will appear in WeChat
-- **Smart publishing** — upload images, select cover art, create/update drafts via WeChat API
-- **One-click copy** — formatted HTML with inline CSS, paste directly into the WeChat editor
-- **LaTeX math** — renders `$...$` / `$$...$$` formulas as PNG images
-- **30+ Callout types** — note, tip, warning, danger, etc. with theme-adapted styling
-- **Multi-account support** — manage multiple WeChat Official Accounts
+## 🌟 简介
 
-📖 Read the [CSS Theme Guide](./CSS_THEME_GUIDE.md) before writing custom themes.
+MP Publisher 是一个 Obsidian 插件，用于撰写文章并发布到微信公众号。它提供实时预览（支持自定义 CSS 主题）、一键复制粘贴到微信编辑器、以及通过 API 直接发布到草稿箱。
 
-## 📦 Installation
-
-### Via BRAT (recommended)
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Obsidian community plugins
-2. Open BRAT settings → **Add beta plugin**
-3. Paste: `https://github.com/joeytoday/obsidian-mp-publisher`
-4. Confirm and enable the plugin in Obsidian settings
-
-### Manual installation
-1. Download `mp-publisher.zip` from [Releases](https://github.com/joeytoday/obsidian-mp-publisher/releases)
-2. Unzip into `<vault>/.obsidian/plugins/`
-3. Reload Obsidian and enable the plugin
-
-## 🚀 Quick Start
-
-### Step 1: Configure WeChat API
-1. Log into [WeChat MP Platform](https://mp.weixin.qq.com/) → Settings & Development → Basic Configuration
-2. Note your `AppID` and `AppSecret`
-3. Add your IP to the whitelist (or set `0.0.0.0/0` if your IP changes frequently)
-4. In Obsidian → Settings → MP Publisher, enter AppID and AppSecret
-
-### Step 2: Preview & Publish
-- **Preview**: Click the 📤 icon in the left sidebar, or run the command "Open MP Publisher"
-- **Copy**: Click "Copy to WeChat" → paste into the WeChat editor (Ctrl+V / Cmd+V)
-- **Publish**: Click "Publish" → enter title → select cover image → confirm
-
-Published articles appear in WeChat MP Platform → Content & Interaction → Drafts.
-
-## ✨ Features
+## ✨ 功能特点
 
 ### 🎨 纯 CSS 主题系统
 - **8 个内置 CSS 主题**：默认、优雅、暗色、极简、清新绿、暖橙、猩红、学术
@@ -97,18 +65,10 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 
 ## 📦 安装
 
-### 通过 BRAT 插件安装（推荐）
-1. 在 Obsidian 社区插件中搜索并安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件
-2. 打开 BRAT 设置，点击 **Add beta plugin**
-3. 粘贴仓库链接：`https://github.com/joeytoday/obsidian-mp-publisher`
-4. 可选择安装版本，点击确认即可自动安装
-5. 在 Obsidian 设置中启用插件
-
-### 手动安装
-1. 前往 [Releases](https://github.com/joeytoday/obsidian-mp-publisher/releases) 下载最新版本的 `mp-publisher.zip` 文件
-2. 将文件解压到你的 Obsidian 仓库 `<vault>/.obsidian/plugins/` 目录下
-3. 重新加载 Obsidian
-4. 在设置中启用插件
+### 通过社区插件市场安装（推荐）
+1. 打开 Obsidian 设置 → 第三方插件 → 社区插件市场
+2. 搜索 "MP Publisher"
+3. 点击安装并启用
 
 ## 🚀 快速开始
 
@@ -302,7 +262,7 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 5. 网络连接是否稳定
 
 ### Q: 样式在公众号编辑器中显示不正确？
-**A:** 
+**A:**
 1. 使用"复制到公众号"功能而不是直接复制粘贴
 2. 自定义主题中不要使用 CSS 变量 `var(--xxx)`、伪元素 `::before`/`::after`、`@media` 查询等，这些在复制/发布时会丢失。详见 [CSS 主题编写指南](CSS_THEME_GUIDE.md)
 3. 确保所有选择器以 `.mp-content-section` 开头
@@ -315,7 +275,7 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 **A:** 登录微信公众平台 > 内容与互动 > 草稿箱，可以看到发布的草稿。
 
 ### Q: 插件无法加载？
-**A:** 
+**A:**
 1. 确保 `main.js`、`manifest.json`、`styles.css` 都在插件目录
 2. 检查 Obsidian 版本是否 >= 0.15.0
 3. 查看开发者工具的控制台错误信息（按 F12 打开）
@@ -337,7 +297,7 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 ```
 
 ### Q: 如何使用数学公式？
-**A:** 
+**A:**
 1. 在 Obsidian 设置 > MP Publisher 中开启"启用数学公式转换"
 2. 在 Markdown 中使用 LaTeX 语法：
    - 行内公式：`$E = mc^2$` 或 `\(\alpha + \beta\)`
@@ -402,7 +362,7 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 本软件采用 **双重许可** 模式：
 
 - **开源使用**：[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) — 可自由使用和修改，但衍生作品必须以相同协议开源
-- **商业使用**：需要商业授权，请联系作者（joeytoday632@outlook.com）
+- **商业使用**：需要商业授权，请联系作者（joeykai2022@126.com）
 
 详见 [LICENSE](LICENSE) 文件。
 
@@ -411,6 +371,57 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 本插件整合了以下优秀项目的功能：
 - [mp-preview](https://github.com/Yeban8090/mp-preview): 样式模板预览系统，已重构样式，但依然感谢作者的工作。
 - [obsidian-enhanced-publisher](https://github.com/chararch/obsidian-enhanced-publisher): 微信发布功能有参考。
+
+---
+
+## 📖 English
+
+MP Publisher is an Obsidian plugin for writing and publishing articles to WeChat Official Account (微信公众号). It provides real-time preview with customizable CSS themes, one-click copy/paste to the WeChat editor, and direct API publishing to the draft box.
+
+**Key features:**
+- **8 built-in CSS themes** + local custom themes via `custom/` folder
+- **Theme management view** — browse, switch, create, edit, rename, delete themes
+- **Real-time preview** — see your article as it will appear in WeChat
+- **Smart publishing** — upload images, select cover art, create/update drafts via WeChat API
+- **One-click copy** — formatted HTML with inline CSS, paste directly into the WeChat editor
+- **LaTeX math** — renders `$...$` / `$$...$$` formulas as PNG images
+- **30+ Callout types** — note, tip, warning, danger, etc. with theme-adapted styling
+- **Multi-account support** — manage multiple WeChat Official Accounts
+
+### Installation
+
+**Via Community Plugin Market (recommended):**
+1. Open Obsidian Settings → Community Plugins → Browse
+2. Search for "MP Publisher"
+3. Click Install and enable
+
+**Via BRAT:**
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Obsidian community plugins
+2. Open BRAT settings → **Add beta plugin**
+3. Paste: `https://github.com/joeytoday/obsidian-mp-publisher`
+4. Confirm and enable the plugin in Obsidian settings
+
+**Manual installation:**
+1. Download `mp-publisher.zip` from [Releases](https://github.com/joeytoday/obsidian-mp-publisher/releases)
+2. Unzip into `<vault>/.obsidian/plugins/`
+3. Reload Obsidian and enable the plugin
+
+### Quick Start
+
+**Step 1: Configure WeChat API**
+1. Log into [WeChat MP Platform](https://mp.weixin.qq.com/) → Settings & Development → Basic Configuration
+2. Note your `AppID` and `AppSecret`
+3. Add your IP to the whitelist (or set `0.0.0.0/0` if your IP changes frequently)
+4. In Obsidian → Settings → MP Publisher, enter AppID and AppSecret
+
+**Step 2: Preview & Publish**
+- **Preview**: Click the 📤 icon in the left sidebar, or run the command "Open MP Publisher"
+- **Copy**: Click "Copy to WeChat" → paste into the WeChat editor (Ctrl+V / Cmd+V)
+- **Publish**: Click "Publish" → enter title → select cover image → confirm
+
+Published articles appear in WeChat MP Platform → Content & Interaction → Drafts.
+
+📖 Read the [CSS Theme Guide](./CSS_THEME_GUIDE.md) before writing custom themes.
 
 ---
 
