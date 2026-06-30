@@ -374,7 +374,7 @@ CSS 主题使用 `.mp-content-section` 作为根选择器，例如：
 
 如果插件帮助到您，欢迎请作者喝杯咖啡～
 
-<img width="603" height="621" alt="wechat-qrcode B_u09Tgq_Z2qC86T" src="https://github.com/user-attachments/assets/c849f9cf-8ed2-443f-9f27-01cd9fc65f13" />
+<img width="150" alt="wechat-qrcode B_u09Tgq_Z2qC86T" src="https://github.com/user-attachments/assets/c849f9cf-8ed2-443f-9f27-01cd9fc65f13" />
 
 ## 🙏 致谢
 
