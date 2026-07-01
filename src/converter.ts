@@ -95,7 +95,7 @@ export class MPConverter {
     private static processLinksToFootnotes(container: HTMLElement): void {
         try {
             const urlToNum = new Map<string, number>();
-            const footnotes: string[] = [];
+            const footnotes: { url: string; text: string }[] = [];
 
             container.querySelectorAll('a').forEach(a => {
                 if (a.closest('pre')) return;
@@ -108,24 +108,30 @@ export class MPConverter {
 
                 const href = a.getAttribute('href') || '';
                 if (href.startsWith('http://') || href.startsWith('https://')) {
+                    const linkText = a.textContent || href;
+
                     let num = urlToNum.get(href);
                     if (num === undefined) {
                         num = footnotes.length + 1;
                         urlToNum.set(href, num);
-                        footnotes.push(href);
+                        footnotes.push({ url: href, text: linkText });
                     }
 
                     const sup = activeDocument.createElement('sup');
                     sup.setCssProps(parseCssString('font-size: 0.75em;'));
                     sup.textContent = `[${num}]`;
 
-                    const fragment = activeDocument.createDocumentFragment();
+                    const linkSpan = activeDocument.createElement('span');
+                    linkSpan.setCssProps(parseCssString('text-decoration: underline;'));
                     while (a.firstChild) {
-                        fragment.appendChild(a.firstChild);
+                        linkSpan.appendChild(a.firstChild);
                     }
-                    if (!fragment.childNodes.length) {
-                        fragment.appendChild(activeDocument.createTextNode(href));
+                    if (!linkSpan.childNodes.length) {
+                        linkSpan.appendChild(activeDocument.createTextNode(href));
                     }
+
+                    const fragment = activeDocument.createDocumentFragment();
+                    fragment.appendChild(linkSpan);
                     fragment.appendChild(sup);
                     a.replaceWith(fragment);
                 }
@@ -137,12 +143,12 @@ export class MPConverter {
                     'margin-top: 1.5em; padding-top: 0.75em; border-top: 1px solid #e0e0e0;'
                 ));
 
-                footnotes.forEach((url, i) => {
+                footnotes.forEach((fn, i) => {
                     const item = activeDocument.createElement('section');
                     item.setCssProps(parseCssString(
                         'font-size: 0.85em; color: #888; margin: 0.25em 0;'
                     ));
-                    item.textContent = `[${i + 1}] ${url}`;
+                    item.textContent = `[${i + 1}] ${fn.text}：${fn.url}`;
                     fnSection.appendChild(item);
                 });
 
