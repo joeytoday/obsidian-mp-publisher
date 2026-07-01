@@ -14,7 +14,7 @@
     "publisher"
   ],
   "author": "",
-  "license": "CC BY-NC-SA 4.0",
+  "license": "AGPL-3.0",
   "devDependencies": {
     "@types/node": "^16.11.6",
     "@typescript-eslint/eslint-plugin": "5.29.0",
