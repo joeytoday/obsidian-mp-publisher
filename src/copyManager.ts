@@ -87,6 +87,30 @@ export class CopyManager {
         });
     }
 
+    /**
+     * 从原始预览 DOM 读取图片描述的 computed style，补全到克隆体上。
+     * styles.css 中的 .mp-image-caption 规则不在主题 <style> 标签中，juice 无法内联。
+     */
+    private static applyComputedStylesToCaptions(
+        sourceElement: HTMLElement,
+        targetContainer: HTMLElement,
+    ): void {
+        const sourceCaptions = sourceElement.querySelectorAll('.mp-image-caption');
+        const targetCaptions = targetContainer.querySelectorAll('.mp-image-caption');
+
+        sourceCaptions.forEach((sourceCaption, index) => {
+            const targetCaption = targetCaptions[index] as HTMLElement | undefined;
+            if (!targetCaption) return;
+            const computed = window.getComputedStyle(sourceCaption);
+            targetCaption.style.setProperty('display', 'block');
+            targetCaption.style.setProperty('text-align', 'center');
+            targetCaption.style.setProperty('font-size', '12px');
+            targetCaption.style.setProperty('color', computed.color);
+            targetCaption.style.setProperty('margin', '-0.6em 0 1em 0');
+            targetCaption.style.setProperty('padding', '0');
+        });
+    }
+
     private static async processImages(container: HTMLElement): Promise<void> {
         const images = container.querySelectorAll('img');
         const imageArray = Array.from(images);
@@ -174,6 +198,9 @@ export class CopyManager {
         const tempContainer = activeDocument.createElement('div');
         tempContainer.appendChild(sanitizeHTMLToDom(inlinedHtml));
         this.applyComputedStylesToCodeBlocks(previewElement, tempContainer);
+
+        // 5b. 补全图片描述的 computed style（styles.css 中的规则 juice 无法内联）
+        this.applyComputedStylesToCaptions(previewElement, tempContainer);
 
         // 6. 清理多余属性（data-*、id、class）
         this.cleanupAttributes(tempContainer);

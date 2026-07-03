@@ -111,7 +111,7 @@ export class MPConverter {
                 alt = alt.replace(extRegex, '').trim();
                 if (!alt) return;
 
-                // 图片在 <p> 内时，描述插到 <p> 后面，避免 div 嵌套在 p 中
+                // 图片在 <p> 内时，描述插到 <p> 后面，避免 p 嵌套 p
                 const parent = img.parentElement;
                 const insertionTarget = (parent && parent.tagName === 'P' && parent.children.length === 1) ? parent : img;
 
@@ -119,9 +119,10 @@ export class MPConverter {
                 const nextSibling = insertionTarget.nextElementSibling;
                 if (nextSibling && nextSibling.classList.contains('mp-image-caption')) return;
 
-                const caption = activeDocument.createElement('div');
+                // 使用 <p> 而非 <div>，微信公众号对 <p> 标签的样式支持更可靠
+                const caption = activeDocument.createElement('p');
                 caption.className = 'mp-image-caption';
-                caption.style.cssText = 'display: block; text-align: center; font-size: 0.85em; color: #888; margin-top: 0.25em;';
+                caption.style.cssText = 'display: block; text-align: center; font-size: 12px; color: #888; margin: -0.6em 0 1em 0; padding: 0;';
                 caption.textContent = alt;
 
                 insertionTarget.parentNode?.insertBefore(caption, insertionTarget.nextSibling);
@@ -698,6 +699,12 @@ export async function markdownToHtml(
             }
         }
 
+        // juice 的 cheerio 序列化可能丢失已有的 inline style，
+        // 需要在 juice 处理后强制补回图片描述样式（与代码高亮补全同理）
+        if (showImageCaption) {
+            htmlContent = reapplyImageCaptionStyles(htmlContent);
+        }
+
         return htmlContent;
     } finally {
         renderComponent.unload();
@@ -815,4 +822,29 @@ function svgToDataUrl(svgElement: SVGElement): Promise<string | null> {
             resolve(null);
         }
     });
+}
+
+/**
+ * juice 的 cheerio 序列化可能丢失元素已有的 inline style，
+ * 用 DOMParser 重新解析 HTML，强制为 .mp-image-caption 元素补回样式。
+ * 与 applyCodeHighlightStyles 的策略相同：在 juice 之后补全。
+ */
+function reapplyImageCaptionStyles(html: string): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+    const captions = doc.querySelectorAll('.mp-image-caption');
+    if (captions.length === 0) return html;
+
+    captions.forEach(caption => {
+        const el = caption as HTMLElement;
+        el.style.setProperty('display', 'block');
+        el.style.setProperty('text-align', 'center');
+        el.style.setProperty('font-size', '12px');
+        el.style.setProperty('color', '#888');
+        el.style.setProperty('margin', '-0.6em 0 1em 0');
+        el.style.setProperty('padding', '0');
+    });
+
+    const wrapper = doc.body.firstChild as Element;
+    return wrapper.innerHTML;
 }

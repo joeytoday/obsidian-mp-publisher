@@ -414,12 +414,16 @@ ol {
   display: block;
   margin: 1em auto;
 }
+.mp-content-section img + .mp-image-caption {
+  margin-top: -0.6em;
+}
 .mp-content-section .mp-image-caption {
   display: block;
   text-align: center;
-  font-size: 0.85em;
-  color: var(--text-muted);
-  margin-top: 0.25em;
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 1em 0;
+  padding: 0;
 }
 .mp-content-section blockquote p {
   margin: 0;
@@ -1162,57 +1166,6 @@ ol {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(82, 144, 220, 0.08);
-}
-.tp-mp-content-section a {
-  color: var(--text-accent);
-  text-decoration: none;
-}
-.tp-mp-content-section table {
-  border-collapse: collapse;
-  margin: 1em 0;
-  width: 100%;
-}
-.tp-mp-content-section th,
-.tp-mp-content-section td {
-  border: 1px solid var(--background-modifier-border);
-  padding: 8px;
-}
-.tp-mp-content-section hr {
-  border: none;
-  border-top: 1px solid var(--background-modifier-border);
-  margin: 20px 0;
-}
-.tp-mp-content-section del {
-  text-decoration: line-through;
-}
-.tp-mp-content-section .task-list-item {
-  list-style: none;
-}
-.tp-mp-content-section .task-list-item input[type=checkbox] {
-  margin-right: 6px;
-}
-.tp-mp-content-section .footnote-ref,
-.tp-mp-content-section .footnote-backref {
-  color: var(--text-accent);
-  text-decoration: none;
-}
-.tp-mp-content-section img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 1em auto;
-}
-.tp-mp-content-section .mp-image-caption {
-  display: block;
-  text-align: center;
-  font-size: 0.85em;
-  color: var(--text-muted);
-  margin-top: 0.25em;
-}
-.tp-mp-content-section blockquote p {
-  margin: 0;
-  padding: 0;
-  line-height: inherit;
 }
 
 /* src/styles/settings/background-modal.css */
