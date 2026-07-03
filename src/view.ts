@@ -216,6 +216,7 @@ export class MPView extends ItemView {
                         this.currentFile.path,
                         this.themeManager,
                         this.plugin.settings.convertMathToSVG,
+                        this.settingsManager.getSettings().showImageCaption,
                     );
 
                     // 创建临时容器并复制

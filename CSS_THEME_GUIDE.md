@@ -18,7 +18,8 @@ Markdown 源文本
     ├── 列表 ul/ol/li → 纯 section 结构
     ├── 代码块 → 添加 macOS 窗口按钮
     ├── Callout → 内联样式的 section 结构
-    └── 图片 → 解析内部链接
+    ├── 图片 → 解析内部链接
+    └── 图片描述（可选） → 在图片下方插入 .mp-image-caption 描述文字
   → ThemeManager.applyTheme() 注入 <style> 标签
   → juice 将 CSS 内联到每个元素的 style 属性
   → CopyManager 后处理（代码高亮补全、属性清理）
@@ -229,7 +230,7 @@ Obsidian 原生渲染，标签不做转换。
 }
 ```
 
-#### 11. 图片
+#### 11. 图片与图片描述
 
 ```css
 .mp-content-section img {
@@ -237,6 +238,15 @@ Obsidian 原生渲染，标签不做转换。
   height: auto;
   display: block;
   /* margin, border-radius, box-shadow */
+}
+
+/* 图片描述（当用户在设置中开启「图片描述」时出现） */
+.mp-content-section .mp-image-caption {
+  display: block;
+  text-align: center;
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 0.25em;
 }
 ```
 
@@ -510,6 +520,15 @@ Callout 已被 `converter.ts` 从 Obsidian 原生结构转换为带内联样式�
   height: auto;
   margin: 1em auto;
   display: block;
+}
+
+/* 图片描述（设置中开启「图片描述」后生效） */
+.mp-content-section .mp-image-caption {
+  display: block;
+  text-align: center;
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 0.25em;
 }
 
 /* ==================== 脚注 ==================== */

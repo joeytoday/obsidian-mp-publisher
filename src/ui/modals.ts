@@ -568,6 +568,7 @@ export class PublishModal extends Modal {
 					this.markdownView.file?.path || '',
 					this.plugin.themeManager,
 					this.plugin.settings.convertMathToSVG,
+					this.plugin.settings.showImageCaption,
 				);
 
 				if (platform === 'wechat') {

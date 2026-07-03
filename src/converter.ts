@@ -104,10 +104,6 @@ export class MPConverter {
             container.querySelectorAll('img').forEach(img => {
                 if (img.closest('pre')) return;
 
-                // 跳过已有描述（防止重复渲染时叠加）
-                const next = img.nextElementSibling;
-                if (next && next.classList.contains('mp-image-caption')) return;
-
                 let alt = img.getAttribute('alt');
                 if (!alt || !alt.trim()) return;
 
@@ -115,20 +111,22 @@ export class MPConverter {
                 alt = alt.replace(extRegex, '').trim();
                 if (!alt) return;
 
+                // 图片在 <p> 内时，描述插到 <p> 后面，避免 div 嵌套在 p 中
+                const parent = img.parentElement;
+                const insertionTarget = (parent && parent.tagName === 'P' && parent.children.length === 1) ? parent : img;
+
+                // 跳过已有描述（防止重复渲染时叠加）
+                const nextSibling = insertionTarget.nextElementSibling;
+                if (nextSibling && nextSibling.classList.contains('mp-image-caption')) return;
+
                 const caption = activeDocument.createElement('div');
                 caption.className = 'mp-image-caption';
                 caption.setCssProps(parseCssString(
-                    'text-align: center; font-size: 0.85em; color: #888; margin-top: 0.5em;'
+                    'display: block; text-align: center; font-size: 0.85em; color: #888; margin-top: 0.25em;'
                 ));
                 caption.textContent = alt;
 
-                // 图片在 <p> 内时，描述插到 <p> 后面，避免 div 嵌套在 p 中
-                const parent = img.parentElement;
-                if (parent && parent.tagName === 'P' && parent.children.length === 1) {
-                    parent.parentNode?.insertBefore(caption, parent.nextSibling);
-                } else {
-                    img.parentNode?.insertBefore(caption, img.nextSibling);
-                }
+                insertionTarget.parentNode?.insertBefore(caption, insertionTarget.nextSibling);
             });
         } catch (error) {
             console.error('[mp-publisher] 图片描述处理失败:', error);
@@ -615,6 +613,7 @@ export async function markdownToHtml(
     sourcePath: string = '',
     themeManager?: ThemeManager,
     convertMathToSVG: boolean = false,
+    showImageCaption: boolean = false,
 ): Promise<string> {
     const tempDiv = activeDocument.createElement('div');
     tempDiv.setCssProps({ position: 'fixed', left: '-9999px', top: '0', width: '1000px' });
@@ -646,7 +645,7 @@ export async function markdownToHtml(
         cleanObsidianUIElements(tempDiv);
 
         // 格式化内容（创建 section 容器、处理代码块等）
-        MPConverter.formatContent(tempDiv);
+        MPConverter.formatContent(tempDiv, { showImageCaption });
 
         // 将代码高亮的 computed style 写入 inline style
         // Obsidian 的代码高亮颜色通过 CSS class 产生，不在主题 CSS 中，

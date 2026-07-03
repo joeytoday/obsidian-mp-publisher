@@ -415,10 +415,11 @@ ol {
   margin: 1em auto;
 }
 .mp-content-section .mp-image-caption {
+  display: block;
   text-align: center;
   font-size: 0.85em;
   color: var(--text-muted);
-  margin-top: 0.5em;
+  margin-top: 0.25em;
 }
 .mp-content-section blockquote p {
   margin: 0;
@@ -1202,10 +1203,11 @@ ol {
   margin: 1em auto;
 }
 .tp-mp-content-section .mp-image-caption {
+  display: block;
   text-align: center;
   font-size: 0.85em;
   color: var(--text-muted);
-  margin-top: 0.5em;
+  margin-top: 0.25em;
 }
 .tp-mp-content-section blockquote p {
   margin: 0;
