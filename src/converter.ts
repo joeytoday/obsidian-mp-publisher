@@ -121,9 +121,7 @@ export class MPConverter {
 
                 const caption = activeDocument.createElement('div');
                 caption.className = 'mp-image-caption';
-                caption.setCssProps(parseCssString(
-                    'display: block; text-align: center; font-size: 0.85em; color: #888; margin-top: 0.25em;'
-                ));
+                caption.style.cssText = 'display: block; text-align: center; font-size: 0.85em; color: #888; margin-top: 0.25em;';
                 caption.textContent = alt;
 
                 insertionTarget.parentNode?.insertBefore(caption, insertionTarget.nextSibling);
