@@ -100,7 +100,12 @@ export class CopyManager {
 
                 if (isHttpUrl) {
                     // 外部 HTTP 图片：使用 requestUrl 绕过 Electron CORS 限制
-                    const response = await requestUrl({ url: img.src });
+                    const response = await Promise.race([
+                        requestUrl({ url: img.src }),
+                        new Promise<never>((_, reject) =>
+                            setTimeout(() => reject(new Error('图片加载超时')), 10000)
+                        ),
+                    ]);
                     if (response.status !== 200) continue;
                     const contentType = response.headers['content-type'] || 'image/png';
                     blob = new Blob([response.arrayBuffer], { type: contentType });

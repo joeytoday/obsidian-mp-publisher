@@ -126,6 +126,19 @@ export class MPSettingTab extends PluginSettingTab {
         titleKeySetting.settingEl.toggle(isExtractEnabled);
         descKeySetting.settingEl.toggle(isExtractEnabled);
 
+        // ── 图片设置 ──────────────────────────────────
+
+        new Setting(containerEl)
+            .setName('图片描述')
+            .setDesc('开启后，预览、复制和发布时自动在图片下方显示描述文字（取自 ![描述](链接) 中的描述）')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().showImageCaption)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        showImageCaption: value,
+                    });
+                }));
+
         // ── 其他 ──────────────────────────────────
 
         new Setting(containerEl)

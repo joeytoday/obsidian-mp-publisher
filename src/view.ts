@@ -513,7 +513,9 @@ export class MPView extends ItemView {
             this,
         );
 
-        MPConverter.formatContent(this.previewEl);
+        MPConverter.formatContent(this.previewEl, {
+            showImageCaption: this.settingsManager.getSettings().showImageCaption,
+        });
 
         // 使用新的 CSS 主题系统：注入 <style> 标签
         const section = this.previewEl.querySelector('.mp-content-section') as HTMLElement;

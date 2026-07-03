@@ -43,6 +43,8 @@ function greet(name) {
 
 ---
 
+![图片描述示例](https://picsum.photos/seed/mpublisher/400/250)
+
 正文段落，展示行间距和字体效果。中文排版需要关注字间距、行高和段落间距的协调。
 `;
 
@@ -119,7 +121,7 @@ export class ThemePreviewView extends ItemView {
             this.renderComponent,
         );
 
-        MPConverter.formatContent(previewArea);
+        MPConverter.formatContent(previewArea, { showImageCaption: true });
 
         const section = previewArea.querySelector('.mp-content-section') as HTMLElement;
         if (section && this.themeId) {

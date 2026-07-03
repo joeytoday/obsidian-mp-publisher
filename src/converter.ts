@@ -11,7 +11,7 @@ export class MPConverter {
         this.app = app;
     }
 
-    static formatContent(element: HTMLElement): void {
+    static formatContent(element: HTMLElement, options?: { showImageCaption?: boolean }): void {
         // 创建 section 容器
         const section = activeDocument.createElement('section');
         section.className = 'mp-content-section';
@@ -22,10 +22,10 @@ export class MPConverter {
         element.appendChild(section);
 
         // 处理元素
-        this.processElements(section);
+        this.processElements(section, options);
     }
 
-    private static processElements(container: HTMLElement | null): void {
+    private static processElements(container: HTMLElement | null, options?: { showImageCaption?: boolean }): void {
         if (!container) return;
 
         // 1. 先处理列表（核心逻辑）
@@ -90,6 +90,49 @@ export class MPConverter {
 
         // 5. 处理链接：外部链接转脚注，内部链接转纯文本
         this.processLinksToFootnotes(container);
+
+        // 6. 处理图片描述
+        if (options?.showImageCaption) {
+            this.processImageCaptions(container);
+        }
+    }
+
+    private static processImageCaptions(container: HTMLElement): void {
+        try {
+            const extRegex = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)$/i;
+
+            container.querySelectorAll('img').forEach(img => {
+                if (img.closest('pre')) return;
+
+                // 跳过已有描述（防止重复渲染时叠加）
+                const next = img.nextElementSibling;
+                if (next && next.classList.contains('mp-image-caption')) return;
+
+                let alt = img.getAttribute('alt');
+                if (!alt || !alt.trim()) return;
+
+                // 内部嵌入的 alt 是文件名，去掉扩展名
+                alt = alt.replace(extRegex, '').trim();
+                if (!alt) return;
+
+                const caption = activeDocument.createElement('div');
+                caption.className = 'mp-image-caption';
+                caption.setCssProps(parseCssString(
+                    'text-align: center; font-size: 0.85em; color: #888; margin-top: 0.5em;'
+                ));
+                caption.textContent = alt;
+
+                // 图片在 <p> 内时，描述插到 <p> 后面，避免 div 嵌套在 p 中
+                const parent = img.parentElement;
+                if (parent && parent.tagName === 'P' && parent.children.length === 1) {
+                    parent.parentNode?.insertBefore(caption, parent.nextSibling);
+                } else {
+                    img.parentNode?.insertBefore(caption, img.nextSibling);
+                }
+            });
+        } catch (error) {
+            console.error('[mp-publisher] 图片描述处理失败:', error);
+        }
     }
 
     private static processLinksToFootnotes(container: HTMLElement): void {

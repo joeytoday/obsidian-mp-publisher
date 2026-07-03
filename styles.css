@@ -414,6 +414,12 @@ ol {
   display: block;
   margin: 1em auto;
 }
+.mp-content-section .mp-image-caption {
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 0.5em;
+}
 .mp-content-section blockquote p {
   margin: 0;
   padding: 0;
@@ -1194,6 +1200,12 @@ ol {
   height: auto;
   display: block;
   margin: 1em auto;
+}
+.tp-mp-content-section .mp-image-caption {
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 0.5em;
 }
 .tp-mp-content-section blockquote p {
   margin: 0;

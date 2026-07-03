@@ -35,6 +35,8 @@ export interface MPSettings {
     extractFromFrontmatter: boolean;
     frontmatterTitleKey: string;
     frontmatterDescriptionKey: string;
+    // 图片描述（默认关闭）
+    showImageCaption: boolean;
 }
 
 const DEFAULT_SETTINGS: MPSettings = {
@@ -61,6 +63,8 @@ const DEFAULT_SETTINGS: MPSettings = {
     extractFromFrontmatter: false,
     frontmatterTitleKey: 'title',
     frontmatterDescriptionKey: 'description',
+    // 图片描述（默认关闭）
+    showImageCaption: false,
 };
 
 export class SettingsManager {
