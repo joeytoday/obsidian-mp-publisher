@@ -277,7 +277,7 @@ function tokenizeContent(value: string, counterMap: Map<string, number> | undefi
         // 跳过 token 之间的空白
         while (i < value.length && /\s/.test(value[i])) i++;
         if (i >= value.length) break;
-
+                    const hexMatch = value.substring(i).match(/^([0-9A-Fa-f]{1,6})\s?/);
         // 字符串引号段: "..." 或 '...'
         if (value[i] === '"' || value[i] === "'") {
             const quote = value[i];
