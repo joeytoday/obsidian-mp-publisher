@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Component, sanitizeHTMLToDom, Notice } from 'obsidian';
+import { App, MarkdownRenderer, Component, sanitizeHTMLToDom } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
@@ -655,16 +655,18 @@ export async function markdownToHtml(
         // ★ 临时注入 <style> 到 <head>，让浏览器 CSS 引擎完整计算计数器值
         //   必须放在 <head> 中并强制重排，Chromium 才能正确解析 counter() 函数
         //   在 tempDiv 内部注入 <style> 时 Chromium 可能不触发计数器计算
+        //   注意：此 style 元素仅用于计算，计算完成后立即移除，不会保留在 DOM 中
+        // eslint-disable-next-line obsidianmd/no-static-styles-assignment
         let tempStyle: HTMLStyleElement | null = null;
         if (themeCSS) {
-            tempStyle = document.createElement('style');
+            tempStyle = activeDocument.createElement('style');
             tempStyle.setAttribute('data-mp-temp', `prerender-${nanoid()}`);
             tempStyle.textContent = themeCSS;
-            document.head.appendChild(tempStyle);
+            activeDocument.head.appendChild(tempStyle);
 
             // 强制浏览器重排，确保 CSS 规则和计数器完全生效
-            // eslint-disable-next-line no-unused-expressions
-            document.body.offsetHeight;
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- 触发 reflow 以计算 CSS 计数器
+            void activeDocument.body.offsetHeight;
         }
 
         // ★ 将 CSS ::before / ::after 伪元素转为真实 <span> DOM 元素

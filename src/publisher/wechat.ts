@@ -118,8 +118,14 @@ export class WechatPublisher {
                 if (uploadedImagesCache) {
                     try {
                         const parsed: unknown = JSON.parse(uploadedImagesCache);
-                        if (parsed && typeof parsed === 'object') {
-                            uploadedImages = parsed as Record<string, { url: string; name: string; uploadTime: number }>;
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            // 验证每个值是否符合预期结构
+                            const isValid = Object.values(parsed).every(
+                                v => v && typeof v === 'object' && 'url' in v && 'name' in v && 'uploadTime' in v
+                            );
+                            if (isValid) {
+                                uploadedImages = parsed as Record<string, { url: string; name: string; uploadTime: number }>;
+                            }
                         }
                     } catch { /* ignore parse error */ }
                 }
@@ -170,7 +176,10 @@ export class WechatPublisher {
                 if (cacheData) {
                     const parsed: unknown = JSON.parse(cacheData);
                     if (parsed && typeof parsed === 'object' && 'token' in parsed && 'expireTime' in parsed) {
-                        cache = parsed as TokenCache;
+                        const p = parsed as Record<string, unknown>;
+                        if (typeof p.token === 'string' && typeof p.expireTime === 'number') {
+                            cache = { token: p.token, expireTime: p.expireTime };
+                        }
                     }
                 }
 

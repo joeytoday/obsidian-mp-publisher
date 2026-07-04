@@ -1,4 +1,4 @@
-import { Notice, requestUrl, sanitizeHTMLToDom } from 'obsidian';
+import { Notice, sanitizeHTMLToDom } from 'obsidian';
 import { processListItems } from './utils/dom-utils';
 import { parseCssString, IMAGE_CAPTION_STYLE, inlineCSSWithJuice } from './utils/css-props';
 import { fetchImageAsArrayBuffer, arrayBufferToDataUrl } from './utils/image-utils';

@@ -232,7 +232,8 @@ function computeCounters(
     config: CounterConfig,
 ): Map<Element, Map<string, number>> {
     const result = new Map<Element, Map<string, number>>();
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT);
+    const doc = container.ownerDocument;
+    const walker = doc.createTreeWalker(container, NodeFilter.SHOW_ELEMENT);
     const counters = new Map<string, number>();
 
     let node: Node | null;
@@ -477,20 +478,21 @@ function renderPseudoForElement(
     }
 
     // 创建 span
-    const span = document.createElement('span');
+    const doc = el.ownerDocument;
+    const span = doc.createElement('span');
     span.className = generateSpanClass(htmlEl.tagName, rule.pseudoType, el);
 
     // 将 CSS 属性写入 inline style（跳过 content 和 counter- 前缀属性）
     for (const [prop, value] of Object.entries(rule.properties)) {
         if (prop === 'content' || prop.startsWith('counter-')) continue;
-        try { span.style.setProperty(prop, value); } catch { /* skip */ }
+        try { span.style.setProperty(prop, String(value)); } catch { /* skip */ }
     }
 
     // 写入文本内容
-    // 纯装饰 span 用 innerHTML 设置 &nbsp;，防止 XMLSerializer 输出自闭合标签
+    // 纯装饰 span 用 textContent 设置 \u00A0（非断行空格），防止 XMLSerializer 输出自闭合标签
     if (textContent) {
         if (isEmptyVisual) {
-            span.innerHTML = '&nbsp;';
+            span.textContent = '\u00A0';
         } else {
             span.textContent = textContent;
         }
@@ -549,8 +551,8 @@ export function prerenderPseudoElements(container: HTMLElement, css: string): st
     for (const rule of pseudoRules) {
         const elements = safeQuerySelectorAll(container, rule.baseSelector);
         for (const el of elements) {
-            const elCounters = counterMap.get(el as HTMLElement);
-            renderPseudoForElement(el, rule, elCounters);
+            const elCounters = counterMap.get(el);
+            renderPseudoForElement(el as HTMLElement, rule, elCounters);
         }
     }
 
