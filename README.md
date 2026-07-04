@@ -33,7 +33,8 @@ MP Publisher 是一个 Obsidian 插件，用于撰写文章并发布到微信公
 - **本地自定义主题**：在插件目录 `custom/` 文件夹下放置 `.css` 文件即可加载为自定义主题
 - **主题管理界面**：通过命令面板打开独立的主题管理视图，支持浏览、切换、新建、编辑、重命名、删除主题
 - **查看与复制 CSS**：在主题卡片中一键查看完整 CSS 源码，支持一键复制
-- 📖 **编写自定义主题前请阅读 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)**，了解可用选择器和禁止使用的 CSS 特性和完整模板
+- ✨ **伪元素自动转换**：`::before` / `::after` 伪元素和 CSS 计数器（`counter-reset` / `counter-increment`）在复制/发布时自动转为真实 DOM 元素，公众号编辑器完美兼容
+- 📖 **编写自定义主题前请阅读 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)**，了解可用选择器和完整模板
 
 https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe
 
@@ -272,7 +273,7 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
 ### Q: 样式在公众号编辑器中显示不正确？
 **A:**
 1. 使用"复制到公众号"功能而不是直接复制粘贴
-2. 自定义主题中不要使用 CSS 变量 `var(--xxx)`、伪元素 `::before`/`::after`、`@media` 查询等，这些在复制/发布时会丢失。详见 [CSS 主题编写指南](CSS_THEME_GUIDE.md)
+2. 自定义主题中不要使用 CSS 变量 `var(--xxx)`、`@media` 查询等，这些在复制/发布时会丢失。`::before`/`::after` 伪元素和 CSS 计数器现已支持自动转换。详见 [CSS 主题编写指南](CSS_THEME_GUIDE.md)
 3. 确保所有选择器以 `.mp-content-section` 开头
 4. 尝试清除浏览器缓存后重新打开公众号编辑器
 

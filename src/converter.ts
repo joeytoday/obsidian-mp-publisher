@@ -1,6 +1,8 @@
 import { App, MarkdownRenderer, Component, sanitizeHTMLToDom, Notice } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
+import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
+import { nanoid } from './utils/nanoid';
 import type { ThemeManager } from './themeManager';
 import { parseCssString } from './utils/css-props';
 
@@ -656,10 +658,40 @@ export async function markdownToHtml(
         // 仅靠空格字符不可靠，必须用 CSS padding-left 作为缩进载体
         convertCodeBlockLines(tempDiv);
 
+        // ★ 获取主题 CSS（在 DOM 仍挂载时，用于伪元素渲染和后续 juice 内联）
+        const themeCSS = themeManager ? themeManager.getActiveThemeCSS() : '';
+
+        // ★ 临时注入 <style> 到 <head>，让浏览器 CSS 引擎完整计算计数器值
+        //   必须放在 <head> 中并强制重排，Chromium 才能正确解析 counter() 函数
+        //   在 tempDiv 内部注入 <style> 时 Chromium 可能不触发计数器计算
+        let tempStyle: HTMLStyleElement | null = null;
+        if (themeCSS) {
+            tempStyle = document.createElement('style');
+            tempStyle.setAttribute('data-mp-temp', `prerender-${nanoid()}`);
+            tempStyle.textContent = themeCSS;
+            document.head.appendChild(tempStyle);
+
+            // 强制浏览器重排，确保 CSS 规则和计数器完全生效
+            // eslint-disable-next-line no-unused-expressions
+            document.body.offsetHeight;
+        }
+
+        // ★ 将 CSS ::before / ::after 伪元素转为真实 <span> DOM 元素
+        //   必须在 DOM 挂载 + CSS 激活状态下执行，以便 getComputedStyle 读取计数器等解析值
+        //   返回已移除伪元素规则的 CSS，后续 juice 内联不会再产生无效的伪元素样式
+        let cleanedCSS: string;
+        try {
+            cleanedCSS = prerenderPseudoElements(tempDiv, themeCSS);
+        } finally {
+            if (tempStyle) {
+                tempStyle.remove();
+            }
+        }
+
         // 移除定位样式
         tempDiv.removeAttribute('style');
 
-        // 序列化 HTML
+        // 序列化 HTML（伪元素已转为真实 DOM，可安全序列化）
         const serializer = new XMLSerializer();
         const cleanContainer = activeDocument.createElement('div');
         while (tempDiv.firstChild) {
@@ -678,16 +710,11 @@ export async function markdownToHtml(
             }
         }
 
-        // 获取主题 CSS 用于 juice 内联（不通过 applyTheme 注入 <style> 标签，
-        // 而是直接通过 juice 将 CSS 内联到每个元素的 style 属性上，
-        // 确保公众号后台和跨设备粘贴时样式不丢失）
-        const themeCSS = themeManager ? themeManager.getActiveThemeCSS() : '';
-
-        // 使用 juice 将 CSS 内联到 HTML
-        if (themeCSS) {
+        // 使用 juice 将 CSS 内联到 HTML（使用已清理伪元素规则的 CSS）
+        if (cleanedCSS) {
             try {
                 const { inlineContent } = await import('juice');
-                htmlContent = inlineContent(htmlContent, themeCSS, {
+                htmlContent = inlineContent(htmlContent, cleanedCSS, {
                     applyStyleTags: true,
                     removeStyleTags: true,
                     preserveMediaQueries: false,
