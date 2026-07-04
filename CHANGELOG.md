@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.7.4] - 2026-07-04
+
+### ✨ 新增
+
+- **伪元素自动转换**：CSS `::before`/`::after` 伪元素和计数器在复制/发布时自动转为真实 DOM 元素，公众号编辑器完美兼容 ([PR #63](https://github.com/joeytoday/obsidian-mp-publisher/pull/63))
+- **社区主题**：新增赤霞 Crimson Glow ([#64](https://github.com/joeytoday/obsidian-mp-publisher/issues/64)) 和 Fresh Azure ([#70](https://github.com/joeytoday/obsidian-mp-publisher/issues/70)) 两个社区投稿主题
+
+---
+
 ## [2.7.3] - 2026-07-03
 
 ### ✨ 新增
