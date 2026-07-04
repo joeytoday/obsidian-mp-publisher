@@ -119,13 +119,17 @@ export class WechatPublisher {
                     try {
                         const parsed: unknown = JSON.parse(uploadedImagesCache);
                         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                            // 验证每个值是否符合预期结构
-                            const isValid = Object.values(parsed).every(
-                                v => v && typeof v === 'object' && 'url' in v && 'name' in v && 'uploadTime' in v
-                            );
-                            if (isValid) {
-                                uploadedImages = parsed as Record<string, { url: string; name: string; uploadTime: number }>;
+                            const obj = parsed as Record<string, unknown>;
+                            const validated: Record<string, { url: string; name: string; uploadTime: number }> = {};
+                            for (const [key, val] of Object.entries(obj)) {
+                                if (val && typeof val === 'object' && !Array.isArray(val)) {
+                                    const v = val as Record<string, unknown>;
+                                    if (typeof v.url === 'string' && typeof v.name === 'string' && typeof v.uploadTime === 'number') {
+                                        validated[key] = { url: v.url, name: v.name, uploadTime: v.uploadTime };
+                                    }
+                                }
                             }
+                            uploadedImages = validated;
                         }
                     } catch { /* ignore parse error */ }
                 }
@@ -175,7 +179,7 @@ export class WechatPublisher {
                 let cache: TokenCache | null = null;
                 if (cacheData) {
                     const parsed: unknown = JSON.parse(cacheData);
-                    if (parsed && typeof parsed === 'object' && 'token' in parsed && 'expireTime' in parsed) {
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
                         const p = parsed as Record<string, unknown>;
                         if (typeof p.token === 'string' && typeof p.expireTime === 'number') {
                             cache = { token: p.token, expireTime: p.expireTime };

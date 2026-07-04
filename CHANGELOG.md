@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.6] - 2026-07-04
+
+### 🔧 代码规范
+
+- 修复 Obsidian 社区审核第三轮 lint 问题：移除禁止的 `<style>` 元素创建（计数器改为纯 JS 手动计算）、`style.setProperty` 替换为 `setCssProps`、移除 `getComputedStyle` 死代码兜底、完善 JSON 解析逐字段类型验证
+
+---
+
 ## [2.7.5] - 2026-07-04
 
 ### 🔧 代码规范
