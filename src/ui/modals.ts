@@ -428,11 +428,11 @@ export class PublishModal extends Modal {
 				if (frontmatter) {
 					const titleKey = this.plugin.settings.frontmatterTitleKey;
 					const descKey = this.plugin.settings.frontmatterDescriptionKey;
-					const titleValue = frontmatter[titleKey];
+					const titleValue: unknown = frontmatter[titleKey];
 					if (typeof titleValue === 'string' && titleValue) {
 						this.titleInput.value = titleValue;
 					}
-					const descValue = frontmatter[descKey];
+					const descValue: unknown = frontmatter[descKey];
 					if (typeof descValue === 'string' && descValue) {
 						this.descriptionInput.value = descValue;
 					}

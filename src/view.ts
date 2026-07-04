@@ -75,7 +75,8 @@ export class MPView extends ItemView {
         // 主题选择器事件
         this.customThemeSelect.querySelector('.custom-select')?.addEventListener('change', (e: Event) => {
             void (async () => {
-                const value = (e as CustomEvent).detail.value;
+                const detail = (e as CustomEvent<{ value: string }>).detail;
+                const value = detail?.value ?? '';
                 this.themeManager.setActiveTheme(value);
                 await this.settingsManager.updateSettings({ activeThemeId: value });
                 this.applyCurrentTheme();
@@ -93,7 +94,8 @@ export class MPView extends ItemView {
         // 字体选择器事件
         this.customFontSelect.querySelector('.custom-select')?.addEventListener('change', (e: Event) => {
             void (async () => {
-                const value = (e as CustomEvent).detail.value;
+                const detail = (e as CustomEvent<{ value: string }>).detail;
+                const value = detail?.value ?? '';
                 this.themeManager.setFont(value);
                 await this.settingsManager.updateSettings({ fontFamily: value });
                 this.applyCurrentTheme();
@@ -162,7 +164,7 @@ export class MPView extends ItemView {
             }
         });
 
-        this.fontSizeSelect.addEventListener('change', updateFontSize);
+        this.fontSizeSelect.addEventListener('change', () => { void updateFontSize(); });
 
         // 预览区域
         this.previewEl = container.createEl('div', { cls: 'mp-preview-area' });

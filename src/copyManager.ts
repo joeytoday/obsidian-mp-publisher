@@ -1,5 +1,7 @@
 import { Notice, requestUrl, sanitizeHTMLToDom } from 'obsidian';
 import { processListItems } from './utils/dom-utils';
+import { parseCssString, IMAGE_CAPTION_STYLE, inlineCSSWithJuice } from './utils/css-props';
+import { fetchImageAsArrayBuffer, arrayBufferToDataUrl } from './utils/image-utils';
 
 export class CopyManager {
     /**
@@ -21,20 +23,11 @@ export class CopyManager {
      * 确保跨平台粘贴时样式一致
      */
     private static async inlineCSS(html: string, css: string): Promise<string> {
-        if (!css) return html;
-        try {
-            const { inlineContent } = await import('juice');
-            return inlineContent(html, css, {
-                applyStyleTags: true,
-                removeStyleTags: true,
-                preserveMediaQueries: false,
-                preserveFontFaces: false,
-            });
-        } catch (error) {
-            console.error('juice 内联 CSS 失败:', error);
+        const result = await inlineCSSWithJuice(html, css);
+        if (result === html && css) {
             new Notice('CSS 内联失败，样式可能不完整');
-            return html;
         }
+        return result;
     }
 
     /**
@@ -102,12 +95,9 @@ export class CopyManager {
             const targetCaption = targetCaptions[index] as HTMLElement | undefined;
             if (!targetCaption) return;
             const computed = window.getComputedStyle(sourceCaption);
-            targetCaption.style.setProperty('display', 'block');
-            targetCaption.style.setProperty('text-align', 'center');
-            targetCaption.style.setProperty('font-size', '12px');
-            targetCaption.style.setProperty('color', computed.color);
-            targetCaption.style.setProperty('margin', '-0.6em 0 1em 0');
-            targetCaption.style.setProperty('padding', '0');
+            // 使用 IMAGE_CAPTION_STYLE 常量，但覆盖 color 为动态计算值
+            const style = IMAGE_CAPTION_STYLE.replace(/color:\s*#888/, `color: ${computed.color}`);
+            targetCaption.setCssProps(parseCssString(style));
         });
     }
 
@@ -119,37 +109,17 @@ export class CopyManager {
             try {
                 if (!img.src || img.src.startsWith('data:')) continue;
 
-                let blob: Blob;
-                const isHttpUrl = img.src.startsWith('http://') || img.src.startsWith('https://');
+                const buffer = await fetchImageAsArrayBuffer(img.src);
+                if (!buffer) continue;
 
-                if (isHttpUrl) {
-                    // 外部 HTTP 图片：使用 requestUrl 绕过 Electron CORS 限制
-                    const response = await Promise.race([
-                        requestUrl({ url: img.src }),
-                        new Promise<never>((_, reject) =>
-                            setTimeout(() => reject(new Error('图片加载超时')), 10000)
-                        ),
-                    ]);
-                    if (response.status !== 200) continue;
-                    const contentType = response.headers['content-type'] || 'image/png';
-                    blob = new Blob([response.arrayBuffer], { type: contentType });
-                } else {
-                    // 本地图片（app:// 等协议）：Electron 环境原生支持，requestUrl 不支持 app:// 协议
-                    // window.fetch is required for app:// local images, requestUrl does not support app:// protocol
-                    // Using window.fetch instead of bare fetch to satisfy no-restricted-globals rule
-                    const response = await window.fetch(img.src);
-                    blob = await response.blob();
-                }
+                // 推断 MIME 类型
+                const mimeType = img.src.match(/\.(\w+)(?:\?|$)/)?.[1]?.toLowerCase();
+                const contentType = mimeType === 'png' ? 'image/png'
+                    : mimeType === 'gif' ? 'image/gif'
+                    : mimeType === 'webp' ? 'image/webp'
+                    : 'image/jpeg';
 
-                const reader = new FileReader();
-                await new Promise((resolve, reject) => {
-                    reader.onload = () => {
-                        img.src = reader.result as string;
-                        resolve(null);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
+                img.src = arrayBufferToDataUrl(buffer, contentType);
             } catch (error) {
                 console.error('图片转换失败:', error);
             }

@@ -22,6 +22,8 @@
     "**/*.ts"
   ],
   "exclude": [
-    "skills"
+    "skills",
+    "**/*.test.ts",
+    "vitest.config.ts"
   ]
 }

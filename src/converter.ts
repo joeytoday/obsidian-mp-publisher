@@ -4,7 +4,8 @@ import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSV
 import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
 import { nanoid } from './utils/nanoid';
 import type { ThemeManager } from './themeManager';
-import { parseCssString } from './utils/css-props';
+import { parseCssString, IMAGE_CAPTION_STYLE, inlineCSSWithJuice } from './utils/css-props';
+import { collectTextNodes } from './utils/dom-utils';
 
 export class MPConverter {
     private static app: App;
@@ -124,7 +125,7 @@ export class MPConverter {
                 // 使用 <p> 而非 <div>，微信公众号对 <p> 标签的样式支持更可靠
                 const caption = activeDocument.createElement('p');
                 caption.className = 'mp-image-caption';
-                caption.style.cssText = 'display: block; text-align: center; font-size: 12px; color: #888; margin: -0.6em 0 1em 0; padding: 0;';
+                caption.setCssProps(parseCssString(IMAGE_CAPTION_STYLE));
                 caption.textContent = alt;
 
                 insertionTarget.parentNode?.insertBefore(caption, insertionTarget.nextSibling);
@@ -416,7 +417,7 @@ function applyCodeHighlightStyles(container: HTMLElement): void {
         spans.forEach(span => {
             const computedColor = window.getComputedStyle(span).color;
             if (computedColor) {
-                (span as HTMLElement).setCssProps({ color: computedColor });
+                span.setCssProps({ color: computedColor });
             }
         });
     });
@@ -439,12 +440,7 @@ function convertCodeBlockLines(container: HTMLElement): void {
 
     // Step 1: 将代码块内所有普通空格替换为 NBSP
     container.querySelectorAll('pre code').forEach(codeEl => {
-        const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
-        const textNodes: Text[] = [];
-        let node: Text | null;
-        while ((node = walker.nextNode() as Text | null)) {
-            textNodes.push(node);
-        }
+        const textNodes = collectTextNodes(codeEl);
 
         for (const textNode of textNodes) {
             const text = textNode.textContent || '';
@@ -461,12 +457,7 @@ function convertCodeBlockLines(container: HTMLElement): void {
     container.querySelectorAll('pre code').forEach(codeEl => {
         // 2a: 先将所有含 \n 的文本节点按换行拆分
         //     确保每个文本节点只属于一行
-        const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
-        const textNodes: Text[] = [];
-        let node: Text | null;
-        while ((node = walker.nextNode() as Text | null)) {
-            textNodes.push(node);
-        }
+        const textNodes = collectTextNodes(codeEl);
 
         for (const textNode of textNodes) {
             const text = textNode.textContent || '';
@@ -712,18 +703,7 @@ export async function markdownToHtml(
 
         // 使用 juice 将 CSS 内联到 HTML（使用已清理伪元素规则的 CSS）
         if (cleanedCSS) {
-            try {
-                const { inlineContent } = await import('juice');
-                htmlContent = inlineContent(htmlContent, cleanedCSS, {
-                    applyStyleTags: true,
-                    removeStyleTags: true,
-                    preserveMediaQueries: false,
-                    preserveFontFaces: false,
-                });
-            } catch (juiceError) {
-                console.error('juice 内联 CSS 失败:', juiceError);
-                new Notice('CSS 内联失败，样式可能不完整，请检查主题 CSS 是否有语法错误');
-            }
+            htmlContent = await inlineCSSWithJuice(htmlContent, cleanedCSS);
         }
 
         // juice 的 cheerio 序列化可能丢失已有的 inline style，
@@ -864,12 +844,7 @@ function reapplyImageCaptionStyles(html: string): string {
 
     captions.forEach(caption => {
         const el = caption as HTMLElement;
-        el.style.setProperty('display', 'block');
-        el.style.setProperty('text-align', 'center');
-        el.style.setProperty('font-size', '12px');
-        el.style.setProperty('color', '#888');
-        el.style.setProperty('margin', '-0.6em 0 1em 0');
-        el.style.setProperty('padding', '0');
+        el.setCssProps(parseCssString(IMAGE_CAPTION_STYLE));
     });
 
     const wrapper = doc.body.firstChild as Element;

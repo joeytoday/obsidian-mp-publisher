@@ -19,3 +19,28 @@ export function parseCssString(css: string): Record<string, string> {
 	}
 	return props;
 }
+
+/**
+ * 图片描述样式常量 — 确保 converter.ts 和 copyManager.ts 使用一致的样式
+ */
+export const IMAGE_CAPTION_STYLE = 'display: block; text-align: center; font-size: 12px; color: #888; margin: -0.6em 0 1em 0; padding: 0;';
+
+/**
+ * 使用 juice 将 CSS 内联到 HTML 元素的 style 属性上
+ * 统一 converter.ts 和 copyManager.ts 的 juice 调用
+ */
+export async function inlineCSSWithJuice(html: string, css: string): Promise<string> {
+	if (!css) return html;
+	try {
+		const { inlineContent } = await import('juice');
+		return inlineContent(html, css, {
+			applyStyleTags: true,
+			removeStyleTags: true,
+			preserveMediaQueries: false,
+			preserveFontFaces: false,
+		});
+	} catch (error) {
+		console.error('juice 内联 CSS 失败:', error);
+		return html;
+	}
+}

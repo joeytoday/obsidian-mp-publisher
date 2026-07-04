@@ -114,7 +114,15 @@ export class WechatPublisher {
             if (mediaId) {
                 // 获取现有的上传图片缓存
                 const uploadedImagesCache = this.app.loadLocalStorage('wechat_uploaded_images_cache');
-                const uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = uploadedImagesCache ? JSON.parse(uploadedImagesCache) as Record<string, { url: string; name: string; uploadTime: number }> : {};
+                let uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = {};
+                if (uploadedImagesCache) {
+                    try {
+                        const parsed: unknown = JSON.parse(uploadedImagesCache);
+                        if (parsed && typeof parsed === 'object') {
+                            uploadedImages = parsed as Record<string, { url: string; name: string; uploadTime: number }>;
+                        }
+                    } catch { /* ignore parse error */ }
+                }
 
                 // 添加新上传的图片
                 uploadedImages[mediaId] = {
@@ -158,7 +166,13 @@ export class WechatPublisher {
         if (!forceRefresh) {
             try {
                 const cacheData = this.app.loadLocalStorage(cacheKey);
-                const cache: TokenCache | null = cacheData ? JSON.parse(cacheData) as TokenCache : null;
+                let cache: TokenCache | null = null;
+                if (cacheData) {
+                    const parsed: unknown = JSON.parse(cacheData);
+                    if (parsed && typeof parsed === 'object' && 'token' in parsed && 'expireTime' in parsed) {
+                        cache = parsed as TokenCache;
+                    }
+                }
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
                 if (cache && Date.now() < cache.expireTime) {

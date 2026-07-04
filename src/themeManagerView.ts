@@ -460,7 +460,7 @@ export class ThemeManagerView extends ItemView {
             type: 'checkbox',
             cls: 'mp-tm-quick-checkbox',
             attr: { 'aria-label': '加入快速切换' },
-        }) as HTMLInputElement;
+        });
         checkbox.checked = isQuickSwitchVisible;
         checkbox.addEventListener('click', (event) => event.stopPropagation());
         checkbox.addEventListener('change', () => {
