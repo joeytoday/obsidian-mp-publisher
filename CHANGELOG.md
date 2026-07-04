@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.5] - 2026-07-04
+
+### 🔧 代码规范
+
+- 修复 Obsidian 社区审核第二轮 lint 问题：`document` 替换为 `activeDocument`/`ownerDocument`、移除未使用导入、修复 `innerHTML` 使用、完善 JSON 解析类型验证
+
+---
+
 ## [2.7.4] - 2026-07-04
 
 ### ✨ 新增
