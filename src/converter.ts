@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, Component } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
+import { nanoid } from './utils/nanoid';
 import type { ThemeManager } from './themeManager';
 
 export class MPConverter {
@@ -424,7 +425,7 @@ export async function markdownToHtml(
         let tempStyle: HTMLStyleElement | null = null;
         if (themeCSS) {
             tempStyle = document.createElement('style');
-            tempStyle.setAttribute('data-mp-temp', 'prerender');
+            tempStyle.setAttribute('data-mp-temp', `prerender-${nanoid()}`);
             tempStyle.textContent = themeCSS;
             document.head.appendChild(tempStyle);
 
@@ -439,8 +440,8 @@ export async function markdownToHtml(
         const cleanedCSS = prerenderPseudoElements(tempDiv, themeCSS);
 
         // ★ 从 <head> 移除临时 <style>（伪元素已转为真实 DOM，不再需要）
-        if (tempStyle && tempStyle.parentNode) {
-            tempStyle.parentNode.removeChild(tempStyle);
+        if (tempStyle) {
+            tempStyle.remove();
         }
 
         // 移除定位样式

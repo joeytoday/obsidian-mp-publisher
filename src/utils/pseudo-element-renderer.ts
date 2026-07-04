@@ -15,7 +15,7 @@
  *   h1::after           → <span class="h1-dot">       （金色圆点）
  *   h2::before          → <span class="h2-num">        （01/02… 序号）
  *   h3::after           → <span class="h3-dot">        （金色小圆点）
- *   blockquote::before  → <span class="bq-mark">       （大引号 “）
+ *   blockquote::before  → <span class="bq-mark">       （大引号 "）
  *   .mp-callout::before → <span class="callout-mark">  （装饰符号 ※✦◆…）
  */
 
@@ -38,7 +38,7 @@ interface CounterConfig {
 // CSS 解析
 // ============================================================
 
-function parsePseudoRules(css: string): PseudoRule[] {
+export function parsePseudoRules(css: string): PseudoRule[] {
     const rules: PseudoRule[] = [];
     const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
     const blocks = splitCSSBlocks(cssWithoutComments);
@@ -57,10 +57,11 @@ function parsePseudoRules(css: string): PseudoRule[] {
             const trimmed = sel.trim();
             if (!trimmed) continue;
 
-            let pseudoType: 'before' | 'after' | null = null;
-            if (trimmed.includes('::before')) pseudoType = 'before';
-            else if (trimmed.includes('::after')) pseudoType = 'after';
-            if (!pseudoType) continue;
+            // Fix (Info.2): 使用 regex 精确匹配 selector 末尾的 ::before/::after，
+            // 避免匹配到出现在 selector 中间的无效伪元素
+            const pseudoMatch = trimmed.match(/::(before|after)\s*$/);
+            if (!pseudoMatch) continue;
+            const pseudoType = pseudoMatch[1] as 'before' | 'after';
 
             const baseSelector = trimmed
                 .replace(/::before/g, '')
@@ -75,11 +76,14 @@ function parsePseudoRules(css: string): PseudoRule[] {
     return rules;
 }
 
-function parseCounterConfig(css: string): CounterConfig {
+export function parseCounterConfig(css: string): CounterConfig {
     const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
     const blocks = splitCSSBlocks(cssWithoutComments);
     const resets: CounterConfig['resets'] = [];
     const increments: CounterConfig['increments'] = [];
+
+    // Fix (P2.2): CSS-wide keywords that should not be parsed as counter names
+    const CSS_WIDE_KEYWORDS = new Set(['none', 'inherit', 'initial', 'unset']);
 
     for (const block of blocks) {
         const braceIndex = block.indexOf('{');
@@ -97,12 +101,15 @@ function parseCounterConfig(css: string): CounterConfig {
         // counter-reset: "counter-name <value>?"
         if (properties['counter-reset']) {
             const parts = properties['counter-reset'].trim().split(/\s+/);
-            const name = parts[0];
-            const value = parts.length > 1 ? parseInt(parts[1], 10) : 0;
-            if (name && !isNaN(value)) {
-                for (const sel of splitSelectors(selectorPart)) {
-                    if (!sel.includes('::before') && !sel.includes('::after')) {
-                        resets.push({ selector: sel.trim(), name, value });
+            // Fix (P2.2): 跳过 CSS-wide 关键字，防止 "none" 被解析为计数器名
+            if (!CSS_WIDE_KEYWORDS.has(parts[0].toLowerCase())) {
+                const name = parts[0];
+                const value = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+                if (name && !isNaN(value)) {
+                    for (const sel of splitSelectors(selectorPart)) {
+                        if (!sel.includes('::before') && !sel.includes('::after')) {
+                            resets.push({ selector: sel.trim(), name, value });
+                        }
                     }
                 }
             }
@@ -111,12 +118,15 @@ function parseCounterConfig(css: string): CounterConfig {
         // counter-increment: "counter-name <value>?"
         if (properties['counter-increment']) {
             const parts = properties['counter-increment'].trim().split(/\s+/);
-            const name = parts[0];
-            const value = parts.length > 1 ? parseInt(parts[1], 10) : 1;
-            if (name && !isNaN(value)) {
-                for (const sel of splitSelectors(selectorPart)) {
-                    if (!sel.includes('::before') && !sel.includes('::after')) {
-                        increments.push({ selector: sel.trim(), name, value });
+            // Fix (P2.2): 跳过 CSS-wide 关键字
+            if (!CSS_WIDE_KEYWORDS.has(parts[0].toLowerCase())) {
+                const name = parts[0];
+                const value = parts.length > 1 ? parseInt(parts[1], 10) : 1;
+                if (name && !isNaN(value)) {
+                    for (const sel of splitSelectors(selectorPart)) {
+                        if (!sel.includes('::before') && !sel.includes('::after')) {
+                            increments.push({ selector: sel.trim(), name, value });
+                        }
                     }
                 }
             }
@@ -130,7 +140,7 @@ function parseCounterConfig(css: string): CounterConfig {
 // CSS 工具函数
 // ============================================================
 
-function splitCSSBlocks(css: string): string[] {
+export function splitCSSBlocks(css: string): string[] {
     const blocks: string[] = [];
     let depth = 0;
     let current = '';
@@ -178,7 +188,7 @@ function parseProperties(body: string): Record<string, string> {
 // 计数器计算
 // ============================================================
 
-function formatCounterValue(value: number, style: string): string {
+export function formatCounterValue(value: number, style: string): string {
     switch (style) {
         case 'decimal-leading-zero': return String(value).padStart(2, '0');
         case 'upper-roman': return toRoman(value).toUpperCase();
@@ -189,7 +199,7 @@ function formatCounterValue(value: number, style: string): string {
     }
 }
 
-function toRoman(num: number): string {
+export function toRoman(num: number): string {
     const vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
     const syms = ['m', 'cm', 'd', 'cd', 'c', 'xc', 'l', 'xl', 'x', 'ix', 'v', 'iv', 'i'];
     let result = '';
@@ -197,7 +207,7 @@ function toRoman(num: number): string {
     return result;
 }
 
-function numToAlpha(num: number): string {
+export function numToAlpha(num: number): string {
     if (num <= 0) return '';
     let result = '';
     while (num > 0) { num--; result = String.fromCharCode(97 + (num % 26)) + result; num = Math.floor(num / 26); }
@@ -248,7 +258,112 @@ function matchesSelectorInContainer(
 // 内容解析
 // ============================================================
 
-function resolveContent(
+/**
+ * Fix (P1.2): Tokenize content value to support mixed string + counter() expressions.
+ *
+ * CSS content 属性支持混合值，例如:
+ *   content: "第" counter(h2) "章"   → "第01章"
+ *   content: "\201C" counter(quote) "\201D"  → ""1"
+ *
+ * 此函数按顺序交替解析字符串引号段和 counter() 表达式，拼接为最终字符串。
+ * 纯字符串和纯 counter() 也可由此函数统一处理。
+ */
+function tokenizeContent(value: string, counterMap: Map<string, number> | undefined): string | null {
+    let result = '';
+    let i = 0;
+    let matchedAny = false;
+
+    while (i < value.length) {
+        // 跳过 token 之间的空白
+        while (i < value.length && /\s/.test(value[i])) i++;
+        if (i >= value.length) break;
+
+        // 字符串引号段: "..." 或 '...'
+        if (value[i] === '"' || value[i] === "'") {
+            const quote = value[i];
+            i++; // 跳过开引号
+            let seg = '';
+            while (i < value.length && value[i] !== quote) {
+                if (value[i] === '\\' && i + 1 < value.length) {
+                    i++; // 跳过反斜杠
+                    // Unicode 转义 \XXXX
+                    const hexMatch = value.substring(i).match(/^([0-9A-Fa-f]{4})\s?/);
+                    if (hexMatch) {
+                        seg += String.fromCodePoint(parseInt(hexMatch[1], 16));
+                        i += hexMatch[0].length;
+                    } else if (value[i] === '\\' || value[i] === quote) {
+                        // 简单转义 \\ 或 \"
+                        seg += value[i];
+                        i++;
+                    } else {
+                        // 保留反斜杠 + 字符
+                        seg += '\\' + value[i];
+                        i++;
+                    }
+                } else {
+                    seg += value[i];
+                    i++;
+                }
+            }
+            if (i < value.length) i++; // 跳过闭引号
+            result += seg;
+            matchedAny = true;
+            continue;
+        }
+
+        // counter() 表达式
+        if (value.substring(i).startsWith('counter(')) {
+            i += 8; // 跳过 'counter('
+            let depth = 0;
+            let argsStr = '';
+            while (i < value.length) {
+                const ch = value[i];
+                if (ch === '(') { depth++; argsStr += ch; }
+                else if (ch === ')') {
+                    if (depth === 0) break;
+                    depth--;
+                    argsStr += ch;
+                } else {
+                    argsStr += ch;
+                }
+                i++;
+            }
+            if (i < value.length) i++; // 跳过闭括号 ')'
+
+            // 解析参数: counter(name, style)
+            const commaIdx = argsStr.indexOf(',');
+            const cName = (commaIdx >= 0 ? argsStr.substring(0, commaIdx) : argsStr).trim();
+            const cStyle = commaIdx >= 0 ? argsStr.substring(commaIdx + 1).trim() : 'decimal';
+
+            if (counterMap && cName) {
+                const val = counterMap.get(cName);
+                if (val !== undefined) {
+                    result += formatCounterValue(val, cStyle);
+                }
+            }
+            matchedAny = true;
+            continue;
+        }
+
+        // 无法识别的 token，跳过字符
+        i++;
+    }
+
+    return matchedAny ? result : null;
+}
+
+/**
+ * Fix (P1.1 & P1.2): 统一通过 resolveContent 解析所有 content 值。
+ *
+ * 支持三种形式:
+ *   1. 纯字符串: "→" 或 "\201C"
+ *   2. 纯计数器: counter(h2, decimal-leading-zero)
+ *   3. 混合形式: "第" counter(h2) "章"
+ *
+ * 所有形式由 tokenizeContent 统一处理，避免 renderPseudoForElement 中
+ * 重复的 counter 解析逻辑产生不一致结果。
+ */
+export function resolveContent(
     cssContentValue: string,
     _el: HTMLElement,
     counterMap: Map<string, number> | undefined,
@@ -257,22 +372,9 @@ function resolveContent(
         return null;
     }
 
-    // 字符串字面量: "\201C" → "“"
-    const stringMatch = cssContentValue.match(/^["'](.*)["']$/s);
-    if (stringMatch) {
-        const inner = stringMatch[1];
-        if (!inner) return '';
-        return inner.replace(/\\([0-9A-Fa-f]{4})\s?/g, (_, hex) =>
-            String.fromCodePoint(parseInt(hex, 16))
-        );
-    }
-
-    // counter() 表达式
-    const cMatch = cssContentValue.match(/counter\(\s*([a-zA-Z_-]+)\s*(?:,\s*([a-zA-Z_-]+)\s*)?\)/);
-    if (cMatch && counterMap) {
-        const val = counterMap.get(cMatch[1]);
-        if (val !== undefined) return formatCounterValue(val, cMatch[2] || 'decimal');
-    }
+    // 统一通过 tokenizeContent 解析，同时覆盖纯字符串、纯 counter() 和混合内容
+    const tokenized = tokenizeContent(cssContentValue, counterMap);
+    if (tokenized !== null) return tokenized;
 
     return null;
 }
@@ -319,6 +421,15 @@ function safeQuerySelectorAll(container: HTMLElement, selector: string): Element
 // 核心渲染
 // ============================================================
 
+/**
+ * Fix (P1.1): 移除 renderPseudoForElement 中独立的 counter 解析分支。
+ *
+ * 原先 renderPseudoForElement 手动拆括号解析 counter(name,style)，
+ * 而 resolveContent 用正则做同样的事。两套逻辑可能产生不同结果。
+ *
+ * 现在所有 content 值的解析统一通过 resolveContent → tokenizeContent，
+ * 包括纯字符串、纯 counter()、以及混合内容。
+ */
 function renderPseudoForElement(
     el: Element,
     rule: PseudoRule,
@@ -333,23 +444,11 @@ function renderPseudoForElement(
         // 纯装饰性，填充 &nbsp; 防止 XMLSerializer 自闭合导致 DOM 错乱
         isEmptyVisual = true;
         textContent = ' ';
-    } else if (cssContent.includes('counter(')) {
-        // 计数器表达式 → 字符串拆分解析
-        const parenStart = cssContent.indexOf('(');
-        const parenEnd = cssContent.lastIndexOf(')');
-        if (parenStart !== -1 && parenEnd !== -1) {
-            const args = cssContent.substring(parenStart + 1, parenEnd).split(',').map(s => s.trim());
-            const cName = args[0];
-            const cStyle = args[1] || 'decimal';
-            if (counterMap) {
-                const cVal = counterMap.get(cName);
-                if (cVal !== undefined) textContent = formatCounterValue(cVal, cStyle);
-            }
-        }
-        if (!textContent) return;
     } else {
-        // 普通字符串
+        // Fix (P1.1): 统一通过 resolveContent 解析，不再在此处手动拆括号解析 counter()
         textContent = resolveContent(cssContent, htmlEl, counterMap);
+
+        // getComputedStyle 兜底（仅在 resolveContent 无法解析时）
         if (textContent === null) {
             try {
                 const computed = getComputedStyle(htmlEl,
@@ -360,6 +459,7 @@ function renderPseudoForElement(
                 }
             } catch { /* ignore */ }
         }
+
         if (!textContent && textContent !== '') return;
     }
 
@@ -367,7 +467,7 @@ function renderPseudoForElement(
     const span = document.createElement('span');
     span.className = generateSpanClass(htmlEl.tagName, rule.pseudoType, el);
 
-    // 将 CSS 属性写入 inline style
+    // 将 CSS 属性写入 inline style（跳过 content 和 counter- 前缀属性）
     for (const [prop, value] of Object.entries(rule.properties)) {
         if (prop === 'content' || prop.startsWith('counter-')) continue;
         try { span.style.setProperty(prop, value); } catch { /* skip */ }
@@ -397,9 +497,16 @@ function renderPseudoForElement(
 // CSS 清理
 // ============================================================
 
-function removePseudoRulesFromCSS(css: string): string {
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    const blocks = splitCSSBlocks(cssWithoutComments);
+/**
+ * Fix (Info.3): 保留原始 CSS 中的注释。
+ *
+ * 原先实现先删除全部注释再重建 blocks，导致非伪元素块的注释也丢失。
+ * 现在直接在原始 CSS 的 blocks 上过滤，只移除 selector 含伪元素的 block，
+ * 保留所有其他内容（包括注释）。
+ */
+export function removePseudoRulesFromCSS(css: string): string {
+    // 直接在原始 CSS 上分块，不预先删除注释
+    const blocks = splitCSSBlocks(css);
 
     const filtered = blocks.filter(block => {
         const braceIndex = block.indexOf('{');
@@ -434,6 +541,6 @@ export function prerenderPseudoElements(container: HTMLElement, css: string): st
         }
     }
 
-    // 4. 移除伪元素规则
+    // 4. 移除伪元素规则（保留注释）
     return removePseudoRulesFromCSS(css);
 }
