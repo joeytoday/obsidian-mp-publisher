@@ -438,7 +438,14 @@ export async function markdownToHtml(
         //   必须在 DOM 挂载 + CSS 激活状态下执行，以便 getComputedStyle 读取计数器等解析值
         //   返回已移除伪元素规则的 CSS，后续 juice 内联不会再产生无效的伪元素样式
         const cleanedCSS = prerenderPseudoElements(tempDiv, themeCSS);
-
+        let cleanedCSS: string;
+        try {
+            cleanedCSS = prerenderPseudoElements(tempDiv, themeCSS);
+        } finally {
+            if (tempStyle) {
+                tempStyle.remove();
+            }
+        }
         // ★ 从 <head> 移除临时 <style>（伪元素已转为真实 DOM，不再需要）
         if (tempStyle) {
             tempStyle.remove();
