@@ -21,6 +21,7 @@ Markdown 源文本
     ├── 图片 → 解析内部链接
     └── 图片描述（可选） → 在图片下方插入 .mp-image-caption 描述文字
   → ThemeManager.applyTheme() 注入 <style> 标签
+  → prerenderPseudoElements() 将 ::before/::after 转为真实 <span> DOM
   → juice 将 CSS 内联到每个元素的 style 属性
   → CopyManager 后处理（代码高亮补全、属性清理）
   → 最终 HTML（复制到剪贴板 / 发布到草稿箱）
@@ -241,12 +242,14 @@ Obsidian 原生渲染，标签不做转换。
 }
 
 /* 图片描述（当用户在设置中开启「图片描述」时出现） */
+/* 注意：复制/发布时样式由内联样式控制，此处仅影响预览 */
 .mp-content-section .mp-image-caption {
   display: block;
   text-align: center;
-  font-size: 0.85em;
+  font-size: 12px;
   color: #888;
-  margin-top: 0.25em;
+  margin: 0 0 1em 0;
+  padding: 0;
 }
 ```
 
@@ -303,6 +306,31 @@ Callout 已被 `converter.ts` 从 Obsidian 原生结构转换为带内联样式�
 
 支持的 Callout 类型：`note`、`info`、`tip`、`hint`、`important`、`warning`、`caution`、`attention`、`danger`、`error`、`bug`、`success`、`check`、`done`、`question`、`help`、`faq`、`failure`、`fail`、`missing`、`abstract`、`summary`、`tldr`、`example`、`todo`、`quote`、`cite`
 
+#### 14. 伪元素自动转换（v2.7.4+）
+
+`prerenderPseudoElements()` 会在 juice 内联之前，将主题 CSS 中的 `::before`/`::after` 规则自动转为真实 `<span>` DOM 元素，公众号编辑器可正常渲染。
+
+**转换后的 class 命名规则：**
+
+| CSS 规则 | 生成的 `<span>` class | 插入位置 |
+|----------|----------------------|----------|
+| `h1::after` | `h1-dot` | 作为最后一个子元素 |
+| `h2::before` | `h2-num` | 作为第一个子元素 |
+| `h3::after` | `h3-dot` | 作为最后一个子元素 |
+| `blockquote::before` | `bq-mark` | 作为第一个子元素 |
+| `.mp-callout::before` | `callout-mark` | 作为第一个子元素 |
+| 其他 `tag::before/::after` | `{tag}-before` 或 `{tag}-after` | 根据伪类型决定 |
+
+**计数器支持：**
+
+CSS 计数器（`counter-reset`/`counter-increment`/`counter()`）会被自动计算并填入 `<span>` 文本内容。支持的计数器样式：`decimal`、`decimal-leading-zero`、`upper-roman`、`lower-roman`、`upper-alpha`/`upper-latin`、`lower-alpha`/`lower-latin`。
+
+混合内容也支持：`"Chapter " counter(h2-counter) ": "` 会解析为如 `"Chapter 01: "`。
+
+**注意事项：**
+- 转换后的 `<span>` 样式由 juice 从原始 CSS 规则中提取并内联，主题作者无需额外编写样式
+- 转换完成后，原始 CSS 中的伪元素规则会被自动移除，不会进入 juice 内联阶段
+
 ---
 
 ## 样式约束与注意事项
@@ -319,7 +347,7 @@ Callout 已被 `converter.ts` 从 Obsidian 原生结构转换为带内联样式�
 | 不要使用 `@media` 查询 | juice 内联时会被丢弃（`preserveMediaQueries: false`） |
 | 不要使用 `@font-face` | juice 内联时会被丢弃（`preserveFontFaces: false`） |
 | 不要使用 CSS 变量 `var(--xxx)` | juice 无法解析 CSS 变量，内联后值会丢失 |
-| 不要使用伪元素 `::before`、`::after` | juice 无法将伪元素内联到 `style` 属性 |
+| 不要使用伪元素 `::before`、`::after`（除非了解自动转换机制） | v2.7.4+ 会自动将伪元素转为真实 `<span>` DOM，但 juice 无法直接内联伪元素。详见下方「伪元素自动转换」章节 |
 | 不要使用伪类 `:hover`、`:focus` 等 | 公众号不支持交互伪类 |
 | 不要使用 `!important` | 会与 ThemeManager 的字体覆盖冲突 |
 | 不要使用 `position: fixed/absolute` | 公众号编辑器不支持定位布局 |
@@ -523,12 +551,14 @@ Callout 已被 `converter.ts` 从 Obsidian 原生结构转换为带内联样式�
 }
 
 /* 图片描述（设置中开启「图片描述」后生效） */
+/* 复制/发布时由内联样式控制，此处仅影响预览 */
 .mp-content-section .mp-image-caption {
   display: block;
   text-align: center;
-  font-size: 0.85em;
+  font-size: 12px;
   color: #888;
-  margin-top: 0.25em;
+  margin: 0 0 1em 0;
+  padding: 0;
 }
 
 /* ==================== 脚注 ==================== */
@@ -682,7 +712,7 @@ Callout 已被 `converter.ts` 从 Obsidian 原生结构转换为带内联样式�
 - [ ] 没有使用 `ul`、`ol`、`li` 选择器
 - [ ] 没有使用 CSS 变量 `var(--xxx)`
 - [ ] 没有使用 `@media`、`@font-face`
-- [ ] 没有使用伪元素 `::before`、`::after`
+- [ ] 没有使用伪元素 `::before`、`::after`（除非已了解自动转换机制，见第 14 节）
 - [ ] 没有使用 `!important`
 - [ ] 列表样式仅使用 `.mp-list-section` 和 `.mp-list-item`
 - [ ] `.mp-list-item` 没有设置 `padding-left`、`margin`、`display`

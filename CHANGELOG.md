@@ -31,6 +31,17 @@
 
 - **图片描述**：新增"图片描述"开关，开启后图片下方的 alt 文字会以居中灰色小字显示，复制/发布到公众号后样式保留
 
+#### 设置开关
+
+<img width="825" height="322" alt="image" src="https://github.com/user-attachments/assets/716c8f31-b4d0-4bf2-9937-e6017e722bab" />
+
+#### 效果预览
+
+<!-- obsidian -->
+obsidian | 公众号预览
+-- | --
+<img width="694" height="432" alt="image" src="https://github.com/user-attachments/assets/e4ebdc6b-e0a8-4d1e-8b70-921edf503db1" />  |  <img width="635" height="406" alt="image" src="https://github.com/user-attachments/assets/ff550874-3fb9-4932-9c30-68840bdc57f9" />
+
 ---
 
 ## [2.7.2] - 2026-07-01
@@ -55,8 +66,22 @@
 
 - **从属性提取标题和描述**：发布时自动从 Markdown frontmatter 中提取标题和描述，填充到发布表单。可在设置中开启（默认关闭），属性名可自定义（默认 `title` 和 `description`）
 - **发布摘要支持**：发布弹窗新增描述输入框，内容同步到微信草稿的 `digest` 字段（可选，120 字以内）
+
+**设置内打开**
+
+<img width="818" height="249" alt="image" src="https://github.com/user-attachments/assets/27f958a5-25d6-45c5-a3f9-ac7951268d82" />
+
+**效果显示**
+
+<!-- obsidian -->
+属性设置 | 效果
+-- | --
+<img width="376" height="207" alt="image" src="https://github.com/user-attachments/assets/68af950d-eb53-4182-a39b-a59848224d4e" />  |  <img width="539" height="265" alt="image" src="https://github.com/user-attachments/assets/35474d7e-baa1-4914-99de-a3d648d10f71" />
+
 - **外部链接转脚注**：预览、复制、发布时自动将 `[文本](https://url)` 外部链接转为脚注格式（文本 + 上标编号 + 文末 URL 列表），不修改源文件
 - **内部链接转纯文本**：`[[内部链接]]` 自动转为纯文本，去除链接标记
+
+https://github.com/user-attachments/assets/fdd36123-9c3a-4401-ac8f-86089c71c0cb
 
 ### 🎨 优化
 

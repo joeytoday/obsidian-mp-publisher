@@ -47,6 +47,42 @@
 
 <video src="https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95"  controls></video>
 
+### 从属性提取标题和描述
+
+发布时可以从 Markdown frontmatter 中自动提取标题和描述，填充到发布表单，省去手动填写。属性名支持自定义（默认 `title` 和 `description`）。
+
+在设置中开启「从属性提取标题和描述」即可使用。
+
+<img width="818" height="249" alt="设置中开启从属性提取" src="https://github.com/user-attachments/assets/27f958a5-25d6-45c5-a3f9-ac7951268d82" />
+
+<!-- obsidian -->
+属性设置 | 效果
+-- | --
+<img width="376" height="207" alt="属性设置" src="https://github.com/user-attachments/assets/68af950d-eb53-4182-a39b-a59848224d4e" /> | <img width="539" height="265" alt="发布效果" src="https://github.com/user-attachments/assets/35474d7e-baa1-4914-99de-a3d648d10f71" />
+
+发布弹窗中也新增了描述输入框，内容会同步到微信草稿的摘要字段（120 字以内），可选填。
+
+### 图片描述
+
+开启后，图片下方的 alt 文字会以居中灰色小字显示在图片下方，复制/发布到公众号后样式保留。
+
+在设置中开启「图片描述」即可使用。写法：`![这是图片描述](图片链接)`。
+
+<img width="825" height="322" alt="图片描述设置" src="https://github.com/user-attachments/assets/716c8f31-b4d0-4bf2-9937-e6017e722bab" />
+
+<!-- obsidian -->
+Obsidian | 公众号预览
+-- | --
+<img width="694" height="432" alt="Obsidian 效果" src="https://github.com/user-attachments/assets/e4ebdc6b-e0a8-4d1e-8b70-921edf503db1" /> | <img width="635" height="406" alt="公众号预览效果" src="https://github.com/user-attachments/assets/ff550874-3fb9-4932-9c30-68840bdc57f9" />
+
+### 脚注
+
+支持 Markdown 脚注语法（`[^1]`）。正文中的脚注编号显示为 `[1]` 上标格式，文末脚注列表格式为 `[1] 文本：url`，方便阅读。
+
 ### 数学公式
 
 支持 LaTeX 数学公式（`$...$` 行内，`$$...$$` 块级），发布时自动转为图片，微信公众号能正常显示。在设置里可以开关这个功能。
+
+### 伪元素自动转换
+
+CSS `::before`/`::after` 伪元素和计数器在复制/发布时会自动转为真实 DOM 元素，确保公众号编辑器完美兼容，无需手动处理。
