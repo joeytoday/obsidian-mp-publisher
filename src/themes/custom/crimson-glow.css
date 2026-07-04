@@ -1,0 +1,324 @@
+/**
+ * Theme: 赤霞 · Crimson Glow
+ * Author: Duyuxuan
+ * Source: https://github.com/du-yuxuan
+ * Description: 深蓝 + 古铜金，沉静书卷气。H2 自动序号、H1/H3 金点装饰、引用块大引号、Callout 装饰符号。所有 ::before/::after 在复制/发布时由 prerenderPseudoElements 转为真实 DOM 元素。
+ */
+
+/* ==================== 全局 ==================== */
+.mp-content-section {
+  font-size: 16px;
+  color: #1e293b;
+  line-height: 1.85;
+  letter-spacing: 0.04em;
+  font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", "Hiragino Mincho ProN", "Songti SC", Georgia, serif;
+  counter-reset: h2-counter;
+}
+
+/* ==================== 标题 ==================== */
+/* H1：深蓝文字 + 右下金色圆点 */
+.mp-content-section h1 {
+  margin: 40px 0 32px;
+  font-size: 1.7em;
+  font-weight: 700;
+  color: #1e3a6e;
+  letter-spacing: 0.05em;
+}
+.mp-content-section h1::after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 8px 0 0 auto;
+  background: #c4a265;
+  border-radius: 50%;
+}
+
+/* H2：自动序号 01 02 03… */
+.mp-content-section h2 {
+  counter-increment: h2-counter;
+  margin: 36px 0 18px;
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #1e3a6e;
+  letter-spacing: 0.05em;
+}
+.mp-content-section h2::before {
+  content: counter(h2-counter, decimal-leading-zero);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 2.2em;
+  font-weight: 300;
+  line-height: 1.1;
+  color: #c4a265;
+  font-family: Georgia, "Times New Roman", "Noto Serif SC", serif;
+  letter-spacing: 0.02em;
+}
+
+/* H3：右侧同行金色圆点 */
+.mp-content-section h3 {
+  margin: 26px 0 12px;
+  font-size: 1.15em;
+  font-weight: 700;
+  color: #1a2f5a;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mp-content-section h3::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  margin-left: 12px;
+  background: #c4a265;
+  border-radius: 50%;
+}
+
+.mp-content-section h4,
+.mp-content-section h5,
+.mp-content-section h6 {
+  margin: 22px 0 10px;
+  font-size: 1em;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* ==================== 段落 ==================== */
+.mp-content-section p {
+  margin: 16px 0;
+  line-height: 1.85;
+  color: #1e293b;
+}
+
+/* ==================== 列表 ==================== */
+.mp-content-section .mp-list-section {
+  margin: 16px 0 0 0;
+  color: #1e293b;
+}
+
+.mp-content-section .mp-list-item {
+  line-height: 1.85;
+  color: #1e293b;
+}
+
+/* ==================== 引用块：金色大引号 + 浅蓝底 ==================== */
+.mp-content-section blockquote {
+  margin: 24px 0;
+  padding: 28px 24px 20px 52px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #475569;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  position: relative;
+}
+.mp-content-section blockquote::before {
+  content: "\201C";
+  position: absolute;
+  left: 14px;
+  top: 6px;
+  font-size: 3em;
+  line-height: 1;
+  color: #c4a265;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: normal;
+  font-weight: 700;
+}
+.mp-content-section blockquote p {
+  margin: 0;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* ==================== 代码块 ==================== */
+.mp-content-section pre {
+  color: #cbd5e1;
+  background: #0f172a;
+  border-radius: 4px;
+  margin: 1.2em 0;
+  padding: 1.2em;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.mp-content-section code:not(pre code) {
+  background: #edf2fa;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #1e3a6e;
+  font-size: 0.9em;
+  font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+}
+
+/* ==================== 链接 ==================== */
+.mp-content-section a {
+  color: #1e3a6e;
+  text-decoration: none;
+  border-bottom: 1px solid #c4a265;
+}
+
+/* ==================== 强调 ==================== */
+.mp-content-section strong {
+  font-weight: 800;
+  color: #1e3a6e;
+}
+.mp-content-section em {
+  font-style: italic;
+  color: #334155;
+}
+.mp-content-section del {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+/* ==================== 表格 ==================== */
+.mp-content-section table {
+  width: 100%;
+  margin: 1.2em 0;
+  border-collapse: collapse;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95em;
+  display: block;
+  overflow-x: auto;
+}
+.mp-content-section th {
+  background: linear-gradient(180deg, #1a2f5a, #1e3a6e);
+  font-weight: 700;
+  color: #f8fafc;
+  padding: 11px 16px;
+  border: 1px solid #94a3b8;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.mp-content-section td {
+  padding: 11px 16px;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  white-space: nowrap;
+}
+.mp-content-section tr:nth-child(even) {
+  background-color: #f3f6fc;
+}
+
+/* ==================== 分隔线：两端渐变隐没 ==================== */
+.mp-content-section hr {
+  border: none;
+  height: 1px;
+  margin: 32px 0;
+  background: linear-gradient(90deg, transparent, #c4a265 40%, #c4a265 60%, transparent);
+}
+
+/* ==================== 图片 ==================== */
+.mp-content-section img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.8em auto;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ---- 图片图注 ---- */
+.mp-content-section .mp-figcaption {
+  display: block;
+  margin: -0.5em auto 1.8em;
+  text-align: center;
+  font-size: 0.85em;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+/* ==================== 脚注 ==================== */
+.mp-content-section .footnote-ref,
+.mp-content-section .footnote-backref {
+  color: #1e3a6e;
+  text-decoration: none;
+  font-size: 0.85em;
+}
+
+/* ==================== Callout 提示框（装饰符号 + 无背景无边框） ==================== */
+.mp-content-section .mp-callout {
+  border-radius: 0;
+  padding: 16px 20px 16px 60px;
+  margin: 1em 0;
+  border: none;
+  background: none;
+  position: relative;
+}
+.mp-content-section .mp-callout::before {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  font-size: 2.4em;
+  line-height: 1;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  opacity: 0.35;
+}
+.mp-content-section .mp-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 1em;
+  line-height: 1.5;
+  color: #3d5270;
+}
+.mp-content-section .mp-callout-content {
+  font-size: 0.95em;
+  line-height: 1.8;
+  color: #1e293b;
+}
+.mp-content-section .mp-callout-content p {
+  margin: 4px 0;
+  padding: 0;
+  line-height: 1.8;
+}
+
+/* Callout 类型变体 */
+.mp-callout-note::before, .mp-callout-info::before { content: "\203B"; color: #4a628a; }
+.mp-callout-note .mp-callout-title, .mp-callout-info .mp-callout-title { color: #3d5270; }
+
+.mp-callout-tip::before, .mp-callout-hint::before { content: "\2726"; color: #5a7a5a; }
+.mp-callout-tip .mp-callout-title, .mp-callout-hint .mp-callout-title { color: #4a624a; }
+
+.mp-callout-important::before, .mp-callout-example::before { content: "\25C6"; color: #6a5a7a; }
+.mp-callout-important .mp-callout-title, .mp-callout-example .mp-callout-title { color: #5a4a6a; }
+
+.mp-callout-warning::before, .mp-callout-caution::before, .mp-callout-attention::before,
+.mp-callout-question::before, .mp-callout-help::before, .mp-callout-faq::before
+  { content: "\25B2"; color: #8a7a5a; }
+.mp-callout-warning .mp-callout-title, .mp-callout-caution .mp-callout-title,
+.mp-callout-attention .mp-callout-title, .mp-callout-question .mp-callout-title,
+.mp-callout-help .mp-callout-title, .mp-callout-faq .mp-callout-title { color: #6a5a3a; }
+
+.mp-callout-danger::before, .mp-callout-error::before, .mp-callout-bug::before,
+.mp-callout-failure::before, .mp-callout-fail::before, .mp-callout-missing::before
+  { content: "\2715"; color: #9a6a6a; }
+.mp-callout-danger .mp-callout-title, .mp-callout-error .mp-callout-title,
+.mp-callout-bug .mp-callout-title, .mp-callout-failure .mp-callout-title,
+.mp-callout-fail .mp-callout-title, .mp-callout-missing .mp-callout-title { color: #8a5a5a; }
+
+.mp-callout-success::before, .mp-callout-check::before, .mp-callout-done::before
+  { content: "\2713"; color: #5a7a5a; }
+.mp-callout-success .mp-callout-title, .mp-callout-check .mp-callout-title,
+.mp-callout-done .mp-callout-title { color: #4a6a4a; }
+
+.mp-callout-abstract::before, .mp-callout-summary::before, .mp-callout-tldr::before
+  { content: "\00A7"; color: #5a7a7a; }
+.mp-callout-abstract .mp-callout-title, .mp-callout-summary .mp-callout-title,
+.mp-callout-tldr .mp-callout-title { color: #4a6a6a; }
+
+.mp-callout-todo::before { content: "\25CB"; color: #5a6a8a; }
+.mp-callout-todo .mp-callout-title { color: #4a5a7a; }
+
+.mp-callout-quote::before, .mp-callout-cite::before { content: "\201C"; color: #8a7a6a; }
+.mp-callout-quote .mp-callout-title, .mp-callout-cite .mp-callout-title { color: #6a5a4a; }

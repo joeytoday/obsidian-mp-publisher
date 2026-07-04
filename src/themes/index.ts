@@ -17,6 +17,8 @@ import academicCSS from './builtin/academic.css';
 // 导入社区投稿 CSS 主题文件
 import colorfulStyleCSS from './custom/colorful-style.css';
 import wechatGreenCSS from './custom/wechat-green.css';
+import crimsonGlowCSS from './custom/crimson-glow.css';
+import freshAzureCSS from './custom/fresh-azure.css';
 
 /**
  * 解析 CSS 文件头部的元数据注释
@@ -141,4 +143,6 @@ export const builtinThemes: CSSTheme[] = [
 export const communityThemes: CSSTheme[] = [
     createCommunityTheme('colorful-style', colorfulStyleCSS),
     createCommunityTheme('wechat-green', wechatGreenCSS),
+    createCommunityTheme('crimson-glow', crimsonGlowCSS),
+    createCommunityTheme('fresh-azure', freshAzureCSS),
 ];

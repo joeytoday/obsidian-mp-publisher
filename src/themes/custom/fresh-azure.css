@@ -1,0 +1,336 @@
+/**
+* Theme: Fresh Azure
+* Author: bugwhite1
+* Source: https://github.com/bugwhite1
+* Description: 以沉静的商务蓝为主色调，搭配薄荷绿点缀与橙色强调，卡片式标题块配金色投影，整体风格清爽专业。
+*/
+
+/* ==================== 全局 ==================== */
+.mp-content-section {
+  font-size: 15px;
+  color: rgb(34, 34, 34);
+  line-height: 27px;
+  letter-spacing: 0.05em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+/* ==================== 标题 ==================== */
+
+/* H1：蓝色背景块 + 金色投影 + 居中 */
+.mp-content-section h1 {
+  margin: 2em auto 1em;
+  font-size: 20px;
+  font-weight: 600;
+  color: #66CDAA;
+  display: block;
+  width: fit-content;
+  background-color: #406494;
+  padding: 0.5em 1em;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 #f2cc5c;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+/* H2：蓝色背景块 + 左侧色条 */
+.mp-content-section h2 {
+  margin: 1.5em 0 1em;
+  font-size: 17px;
+  font-weight: 600;
+  color: #66CDAA;
+  position: relative;
+  background-color: #4a78a5;
+  padding: 0.6em 1.2em 0.6em 1.4em;
+  width: fit-content;
+  border-left: 8px solid #d0d0d0;
+  border-radius: 12px;
+  text-align: left;
+  letter-spacing: 0.04em;
+}
+
+/* H3：左侧色条 + 加粗 */
+.mp-content-section h3 {
+  margin: 1em 0 0.6em;
+  font-size: 15px;
+  font-weight: 600;
+  color: #66CDAA;
+  padding-left: 12px;
+  border-left: 5px solid #406494;
+  letter-spacing: 0.03em;
+}
+
+/* H4~H6：与 H3 同风格 */
+.mp-content-section h4,
+.mp-content-section h5,
+.mp-content-section h6 {
+  margin: 1em 0 0.6em;
+  font-size: 15px;
+  font-weight: 500;
+  color: #66CDAA;
+  padding-left: 12px;
+  border-left: 5px solid #406494;
+  letter-spacing: 0.03em;
+}
+
+/* ==================== 段落 ==================== */
+.mp-content-section p {
+  margin: 18px 0;
+  line-height: 27px;
+  color: rgb(34, 34, 34);
+  font-size: 15px;
+  text-align: justify;
+}
+
+/* ==================== 列表 ==================== */
+
+/* 一级列表容器：卡片式淡蓝背景 + 左侧色条（padding-left 留给符号间距） */
+.mp-content-section .mp-list-section {
+  background: #E0ECF8;
+  padding-right: 1.5em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin: 0.8em 0;
+  border-left: 4px solid #4B74A0;
+  box-shadow: 0 2px 8px rgba(43, 70, 110, 0.06);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* 列表项 */
+.mp-content-section .mp-list-item {
+  line-height: 1.75;
+  color: rgb(34, 34, 34);
+}
+
+/* 嵌套列表：重置背景，添加引导线 */
+.mp-content-section .mp-list-section .mp-list-section {
+  margin: 0.04em 0;
+  border-left: 1.5px solid #c8d6e5;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* ==================== 引用 ==================== */
+.mp-content-section blockquote {
+  margin: 20px 0;
+  padding: 15px 20px;
+  background-color: #d9e4ef;
+  color: #666;
+  font-style: italic;
+}
+
+.mp-content-section blockquote p {
+  margin: 0;
+  line-height: inherit;
+}
+
+/* ==================== 代码块 ==================== */
+.mp-content-section pre {
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 1em;
+  margin: 1.2em 0;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+  border: none;
+  white-space: pre-wrap;
+}
+
+.mp-content-section pre code {
+  color: #d4d4d4;
+}
+
+/* ==================== 行内代码 ==================== */
+/* 只对正文/列表/引用/表格/callout 段落中的 code 应用行内代码样式，
+   排除标题、代码块等场景。 */
+.mp-content-section p code,
+.mp-content-section .mp-list-item code,
+.mp-content-section .mp-callout-content code,
+.mp-content-section blockquote code,
+.mp-content-section td code,
+.mp-content-section th code {
+  color: #DB1398;
+  background: #F2F2F2;
+  background-image: radial-gradient(circle, #D5DDDF 0.8px, transparent 0.8px);
+  background-size: 5px 5px;
+  background-repeat: repeat;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: normal;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ==================== 链接 ==================== */
+.mp-content-section a {
+  color: #66CDAA;
+  text-decoration: none;
+  border-bottom: 1px solid #66CDAA;
+}
+
+/* ==================== 强调 ==================== */
+/* 加粗：橙色 */
+.mp-content-section strong {
+  font-weight: 600;
+  color: #FF7732;
+}
+
+.mp-content-section em {
+  font-style: italic;
+  color: #66CDAA;
+}
+
+.mp-content-section del {
+  text-decoration: line-through;
+  color: #999;
+}
+
+/* ==================== 表格 ==================== */
+.mp-content-section table {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 24px 0;
+  border-collapse: collapse;
+  table-layout: auto;
+  word-break: break-word;
+  border: 1px solid #d0d8e0;
+}
+
+.mp-content-section th {
+  background: linear-gradient(135deg, #406494 0%, #4a78a5 50%, #4B74A0 100%);
+  font-weight: 600;
+  color: #66CDAA;
+  text-align: center;
+  padding: 10px 14px;
+  border: 1px solid #d0d8e0;
+}
+
+.mp-content-section td {
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid #d0d8e0;
+}
+
+.mp-content-section tr:nth-child(even) td {
+  background-color: #E8EFF5;
+}
+
+/* ==================== 分隔线 ==================== */
+.mp-content-section hr {
+  margin: 24px 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #406494, transparent);
+}
+
+/* ==================== 图片 ==================== */
+.mp-content-section img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 12px;
+}
+
+/* ==================== 脚注 ==================== */
+.mp-content-section .footnote-ref,
+.mp-content-section .footnote-backref {
+  color: #66CDAA;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+/* ==================== Callout 提示框 ==================== */
+/* 基础：border-left 由转换器内联样式控制（已在 main.js 中移除 border-left 内联代码），
+   此处通过 CSS 确保完全无左侧色条 */
+.mp-content-section .mp-callout {
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 1em 0;
+  border-left: none;
+  background: #f0faf5;
+}
+
+.mp-content-section .mp-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+.mp-content-section .mp-callout-content {
+  font-size: 0.95em;
+  line-height: 1.7;
+  color: #3f3f3f;
+}
+
+.mp-content-section .mp-callout-content p {
+  margin: 4px 0;
+  padding: 0;
+  line-height: 1.7;
+}
+
+/* Callout 类型变体：全部无左侧色条，仅以圆角背景色区分 */
+.mp-content-section .mp-callout-note      { border-left: none; background: #e8f0fe; }
+.mp-content-section .mp-callout-note      .mp-callout-title { color: #448aff; }
+.mp-content-section .mp-callout-info      { border-left: none; background: #e8f0fe; }
+.mp-content-section .mp-callout-info      .mp-callout-title { color: #448aff; }
+.mp-content-section .mp-callout-tip       { border-left: none; background: #e6f7f2; }
+.mp-content-section .mp-callout-tip       .mp-callout-title { color: #00bfa5; }
+.mp-content-section .mp-callout-hint      { border-left: none; background: #e6f7f2; }
+.mp-content-section .mp-callout-hint      .mp-callout-title { color: #00bfa5; }
+.mp-content-section .mp-callout-important { border-left: none; background: #f3e8fd; }
+.mp-content-section .mp-callout-important .mp-callout-title { color: #7c4dff; }
+.mp-content-section .mp-callout-warning   { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-warning   .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-caution   { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-caution   .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-attention { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-attention .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-danger    { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-danger    .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-error     { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-error     .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-bug       { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-bug       .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-success   { border-left: none; background: #e8f5e9; }
+.mp-content-section .mp-callout-success   .mp-callout-title { color: #00c853; }
+.mp-content-section .mp-callout-check     { border-left: none; background: #e8f5e9; }
+.mp-content-section .mp-callout-check     .mp-callout-title { color: #00c853; }
+.mp-content-section .mp-callout-done      { border-left: none; background: #e8f5e9; }
+.mp-content-section .mp-callout-done      .mp-callout-title { color: #00c853; }
+.mp-content-section .mp-callout-question  { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-question  .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-help      { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-help      .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-faq       { border-left: none; background: #fff8e1; }
+.mp-content-section .mp-callout-faq       .mp-callout-title { color: #ff9100; }
+.mp-content-section .mp-callout-failure   { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-failure   .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-fail      { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-fail      .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-missing   { border-left: none; background: #ffeef0; }
+.mp-content-section .mp-callout-missing   .mp-callout-title { color: #ff1744; }
+.mp-content-section .mp-callout-abstract  { border-left: none; background: #e0f7fa; }
+.mp-content-section .mp-callout-abstract  .mp-callout-title { color: #00b8d4; }
+.mp-content-section .mp-callout-summary   { border-left: none; background: #e0f7fa; }
+.mp-content-section .mp-callout-summary   .mp-callout-title { color: #00b8d4; }
+.mp-content-section .mp-callout-tldr      { border-left: none; background: #e0f7fa; }
+.mp-content-section .mp-callout-tldr      .mp-callout-title { color: #00b8d4; }
+.mp-content-section .mp-callout-example   { border-left: none; background: #f3e8fd; }
+.mp-content-section .mp-callout-example   .mp-callout-title { color: #7c4dff; }
+.mp-content-section .mp-callout-todo      { border-left: none; background: #e8f0fe; }
+.mp-content-section .mp-callout-todo      .mp-callout-title { color: #448aff; }
+.mp-content-section .mp-callout-quote     { border-left: none; background: #f5f5f5; }
+.mp-content-section .mp-callout-quote     .mp-callout-title { color: #757575; }
+.mp-content-section .mp-callout-cite      { border-left: none; background: #f5f5f5; }
+.mp-content-section .mp-callout-cite      .mp-callout-title { color: #757575; }
