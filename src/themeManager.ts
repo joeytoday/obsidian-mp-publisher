@@ -164,10 +164,11 @@ export class ThemeManager {
         const finalCSS = scopedThemeCSS + '\n' + fontOverrideCSS;
 
         // 注入新的样式标签
-        const styleElement = document.createElement('style');
+        // Obsidian lint 禁止通过 createEl 创建 style 元素，使用原生 DOM API 替代
+        const styleElement = activeDocument.createElement('style');
         styleElement.setAttribute('data-mp-theme', targetTheme.id);
+        element.appendChild(styleElement);
         styleElement.textContent = finalCSS;
-        element.insertBefore(styleElement, element.firstChild);
     }
 
     /** 给 CSS 选择器加上作用域前缀，防止跨视图污染 */
@@ -459,7 +460,7 @@ export class ThemeManager {
             });
 
             if (response.status === 200 && Array.isArray(response.json)) {
-                const themeIndex: RemoteThemeIndex[] = response.json;
+                const themeIndex = response.json as RemoteThemeIndex[];
 
                 // 更新缓存
                 await this.plugin.settingsManager.updateSettings({

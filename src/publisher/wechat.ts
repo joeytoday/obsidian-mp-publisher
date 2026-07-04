@@ -1,8 +1,10 @@
-import { App, Notice, requestUrl, TFile } from 'obsidian';
+import { App, Notice, requestUrl, TFile, sanitizeHTMLToDom, RequestUrlResponse } from 'obsidian';
 import MPPlugin from '../main';
-import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata } from '../types/metadata';
+import { getOrCreateMetadata, isImageUploaded, addImageMetadata, updateMetadata, updateDraftMetadata, DocumentMetadata } from '../types/metadata';
 import { Logger } from '../utils/logger';
 import { getProgressIndicator } from '../ui/ProgressIndicator';
+import { processListItems } from '../utils/dom-utils';
+import { parseCssString } from '../utils/css-props';
 
 // 微信素材类型接口
 interface WechatMaterial {
@@ -16,6 +18,31 @@ interface WechatMaterial {
 interface TokenCache {
     token: string;
     expireTime: number;
+}
+
+// 微信 API 响应类型
+interface WechatBaseResponse {
+    errcode: number;
+    errmsg: string;
+}
+
+interface WechatTokenResponse extends WechatBaseResponse {
+    access_token?: string;
+}
+
+interface WechatUploadResponse extends WechatBaseResponse {
+    url?: string;
+    media_id?: string;
+}
+
+interface WechatDraftResponse extends WechatBaseResponse {
+    media_id?: string;
+    item?: Array<{ index: number; ad_count: number; }>;
+}
+
+interface WechatMaterialsResponse extends WechatBaseResponse {
+    item?: WechatMaterial[];
+    total_count?: number;
 }
 
 export class WechatPublisher {
@@ -48,13 +75,15 @@ export class WechatPublisher {
                 });
             }, accountId);
 
-            if (materialsResponse.json.errcode && materialsResponse.json.errcode !== 0) {
-                this.handleWechatError(materialsResponse.json);
+            const data = materialsResponse.json as WechatMaterialsResponse;
+
+            if (data.errcode && data.errcode !== 0) {
+                this.handleWechatError(data);
                 return { items: [], totalCount: 0 };
             }
 
-            const items = materialsResponse.json.item || [];
-            const totalCount = materialsResponse.json.total_count || 0;
+            const items = data.item || [];
+            const totalCount = data.total_count || 0;
 
             // 更新缓存
             const cacheKey = `wechat_material_cache_page_${page}`;
@@ -85,7 +114,7 @@ export class WechatPublisher {
             if (mediaId) {
                 // 获取现有的上传图片缓存
                 const uploadedImagesCache = this.app.loadLocalStorage('wechat_uploaded_images_cache');
-                const uploadedImages = uploadedImagesCache ? JSON.parse(uploadedImagesCache) : {};
+                const uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = uploadedImagesCache ? JSON.parse(uploadedImagesCache) as Record<string, { url: string; name: string; uploadTime: number }> : {};
 
                 // 添加新上传的图片
                 uploadedImages[mediaId] = {
@@ -129,7 +158,7 @@ export class WechatPublisher {
         if (!forceRefresh) {
             try {
                 const cacheData = this.app.loadLocalStorage(cacheKey);
-                const cache: TokenCache = cacheData ? JSON.parse(cacheData) : null;
+                const cache: TokenCache | null = cacheData ? JSON.parse(cacheData) as TokenCache : null;
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
                 if (cache && Date.now() < cache.expireTime) {
@@ -150,7 +179,7 @@ export class WechatPublisher {
                 if (attempt > 0) {
                     const delay = initialDelay * Math.pow(2, attempt - 1);
                     this.logger.warn(`获取令牌尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => window.setTimeout(resolve, delay));
                 }
 
                 this.logger.debug(`开始获取微信访问令牌${forceRefresh ? ' (强制刷新)' : ''}`);
@@ -171,11 +200,13 @@ export class WechatPublisher {
                     }
                 });
 
-                if (!tokenResponse.json.access_token) {
-                    this.logger.error("获取微信访问令牌业务失败: ", tokenResponse.json);
-                    const errcode = tokenResponse.json.errcode;
-                    const errmsg = tokenResponse.json.errmsg || '未知错误';
-                    
+                const tokenData = tokenResponse.json as WechatTokenResponse;
+
+                if (!tokenData.access_token) {
+                    this.logger.error("获取微信访问令牌业务失败: ", tokenData);
+                    const errcode = tokenData.errcode;
+                    const errmsg = tokenData.errmsg || '未知错误';
+
                     // 业务失败通常不需要重试，除非是特定错误
                     if (attempt === maxRetries) {
                         // 针对 IP 白名单错误提供明确的提示
@@ -197,7 +228,7 @@ export class WechatPublisher {
                     continue; // 尝试重试
                 }
 
-                const accessToken = tokenResponse.json.access_token;
+                const accessToken = tokenData.access_token;
 
                 // 更新缓存（110分钟 = 6600000毫秒）
                 const expireTime = Date.now() + 6600000;
@@ -208,11 +239,11 @@ export class WechatPublisher {
                 this.app.saveLocalStorage(cacheKey, JSON.stringify(newCache));
 
                 return accessToken;
-            } catch (error: any) {
+            } catch (error: unknown) {
                 this.logger.error(`获取微信访问令牌网络错误 (尝试 ${attempt + 1}/${maxRetries + 1}):`, error);
 
                 if (attempt === maxRetries) {
-                    const errorMsg = error.message || String(error);
+                    const errorMsg = error instanceof Error ? error.message : String(error);
                     if (errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::')) {
                         new Notice('获取微信令牌失败: 网络连接被关闭，请检查是否启用了代理或网络环境不稳定');
                     } else {
@@ -234,7 +265,6 @@ export class WechatPublisher {
     ): Promise<{ url: string; media_id: string } | null> {
         try {
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substring(2);
-            const blob = new Blob([imageData]);
 
             const formDataHeader = `--${boundary}\r\nContent-Disposition: form-data; name="media"; filename="${fileName}"\r\nContent-Type: image/jpeg\r\n\r\n`;
             const formDataFooter = `\r\n--${boundary}--`;
@@ -262,14 +292,16 @@ export class WechatPublisher {
 
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
-            if (response.json.errcode && response.json.errcode !== 0) {
-                this.handleWechatError(response.json);
-                throw new Error(response.json.errmsg);
+            const uploadData = response.json as WechatUploadResponse;
+
+            if (uploadData.errcode && uploadData.errcode !== 0) {
+                this.handleWechatError(uploadData);
+                throw new Error(uploadData.errmsg);
             }
 
             return {
-                url: response.json.url,
-                media_id: response.json.media_id
+                url: uploadData.url ?? '',
+                media_id: uploadData.media_id ?? ''
             };
         } catch (error) {
             this.logger.error('上传图片失败:', error);
@@ -296,12 +328,12 @@ export class WechatPublisher {
             // 获取或创建元数据（存储在插件 data.json 中，不再生成文件系统上的文件夹）
             const metadata = getOrCreateMetadata(this.plugin, file);
 
-            // 使用 innerHTML 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
+            // 使用 sanitizeHTMLToDom 解析 HTML，避免 DOMParser + XMLSerializer 破坏已内联的样式结构
+            const tempDiv = activeDocument.createElement('div');
+            tempDiv.appendChild(sanitizeHTMLToDom(content));
 
             // 处理列表（清理空项、空段落、添加 margin: 0）
-            this.processLists(tempDiv);
+            processListItems(tempDiv);
 
             // 获取所有图片元素
             const images = tempDiv.querySelectorAll('img');
@@ -330,7 +362,7 @@ export class WechatPublisher {
             }
 
             // 再次处理列表（处理图片后可能产生新的空行）
-            this.processLists(tempDiv);
+            processListItems(tempDiv);
 
             // 使用 innerHTML 输出，保持与输入一致的 HTML 结构，不引入额外的 xmlns 等属性
             return tempDiv.innerHTML;
@@ -338,23 +370,6 @@ export class WechatPublisher {
             this.logger.error('处理文档图片时出错:', error);
             throw error;
         }
-    }
-
-    /**
-     * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为 section + p 结构，缩进已在 mp-list-section 上设置
-     * 只处理 mp-list-item 内部的 p 标签内联化，与复制流程 CopyManager.processLists 保持一致
-     * 不强制覆盖 padding-left，converter 已根据层级正确设置缩进
-     */
-    private processLists(container: HTMLElement): void {
-        container.querySelectorAll('.mp-list-item').forEach(item => {
-            const el = item as HTMLElement;
-            el.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).style.display = 'inline';
-                (pEl as HTMLElement).style.margin = '0';
-                (pEl as HTMLElement).style.padding = '0';
-            });
-        });
     }
 
     /**
@@ -366,24 +381,28 @@ export class WechatPublisher {
      * 避免微信 API 将行内代码渲染为独立的代码块
      */
     private convertCodeBlockNewlines(html: string): string {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
+        const tempDiv = activeDocument.createElement('div');
+        tempDiv.appendChild(sanitizeHTMLToDom(html));
 
         // 将 <pre> 外的 <code>（行内代码）转为 <span> + 内联样式
         // 微信 API 会把所有 <code> 标签当成代码块渲染
         tempDiv.querySelectorAll('code').forEach(codeEl => {
             if (codeEl.closest('pre')) return;
 
-            const span = document.createElement('span');
-            const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
-            span.setAttribute('style', existingStyle);
-            span.innerHTML = codeEl.innerHTML;
+            const span = activeDocument.createElement('span');
+            const existingStyle = codeEl.getAttribute('style') || '';
+            if (existingStyle) {
+                span.setCssProps(parseCssString(existingStyle));
+            }
+            while (codeEl.firstChild) {
+                span.appendChild(codeEl.firstChild);
+            }
             codeEl.parentNode?.replaceChild(span, codeEl);
         });
 
         // 处理代码块中的换行符
         tempDiv.querySelectorAll('pre code').forEach(codeEl => {
-            const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+            const walker = activeDocument.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
             const textNodes: Text[] = [];
             let node: Text | null;
             while ((node = walker.nextNode() as Text | null)) {
@@ -395,13 +414,13 @@ export class WechatPublisher {
                 if (!text.includes('\n')) continue;
 
                 const parts = text.split('\n');
-                const fragment = document.createDocumentFragment();
+                const fragment = activeDocument.createDocumentFragment();
                 parts.forEach((part, index) => {
                     if (index > 0) {
-                        fragment.appendChild(document.createElement('br'));
+                        fragment.appendChild(activeDocument.createElement('br'));
                     }
                     if (part) {
-                        fragment.appendChild(document.createTextNode(part));
+                        fragment.appendChild(activeDocument.createTextNode(part));
                     }
                 });
                 textNode.parentNode?.replaceChild(fragment, textNode);
@@ -414,7 +433,7 @@ export class WechatPublisher {
     async processImage(
         imagePath: string,
         file: TFile,
-        metadata: any,
+        metadata: DocumentMetadata,
         accountId?: string,
     ): Promise<string | null> {
         try {
@@ -455,8 +474,9 @@ export class WechatPublisher {
                 if (!imageMetadata) {
                     this.logger.debug(`fetch 本地图片: ${imagePath}`);
                     try {
-                        // eslint-disable-next-line no-restricted-globals
-                        const response = await fetch(imagePath);
+                        // window.fetch is required for local images, requestUrl does not support app:// protocol
+                        // Using window.fetch instead of bare fetch to satisfy no-restricted-globals rule
+                        const response = await window.fetch(imagePath);
                         if (!response.ok) {
                             this.logger.error(`fetch 本地图片失败: ${imagePath}, status: ${response.status}`);
                             return null;
@@ -568,15 +588,16 @@ export class WechatPublisher {
         content: string,
         thumb_media_id: string,
         file: TFile,
-        accountId?: string
+        accountId?: string,
+        digest: string = ''
     ): Promise<boolean> {
         try {
             // 获取进度指示器
             const progress = getProgressIndicator(this.app);
             
-            // 使用 innerHTML 统计图片数量，避免 DOMParser 破坏已内联的样式结构
-            const countDiv = document.createElement('div');
-            countDiv.innerHTML = content;
+            // 使用 sanitizeHTMLToDom 统计图片数量，避免 DOMParser 破坏已内联的样式结构
+            const countDiv = activeDocument.createElement('div');
+            countDiv.appendChild(sanitizeHTMLToDom(content));
             const imageCount = countDiv.querySelectorAll('img').length;
             
             // 显示进度指示器（图片数量 + 1 个发布步骤）
@@ -584,12 +605,10 @@ export class WechatPublisher {
             progress.show(totalSteps, '正在发布到微信公众号...');
             
             // 处理文档中的图片（上传到微信并替换 src）
-            let processedCount = 0;
             let processedContent = await this.processDocumentImages(
                 content, 
                 file, 
                 (current, total, imageName) => {
-                    processedCount = current;
                     progress.updateProgress(
                         current, 
                         totalSteps, 
@@ -631,7 +650,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,
@@ -650,7 +669,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,
@@ -664,7 +683,8 @@ export class WechatPublisher {
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
             // 如果是 40007 错误且我们之前尝试更新现有草稿，可能是草稿 ID 已失效，清除它并重试一次创建新草稿
-            if (response.json && response.json.errcode === 40007 && metadata.draft?.media_id) {
+            const initialData = response.json as WechatDraftResponse;
+            if (initialData.errcode === 40007 && metadata.draft?.media_id) {
                 this.logger.warn('草稿 media_id 已失效，尝试重新创建新草稿');
                 metadata.draft.media_id = ''; // 清除失效的 ID
                 
@@ -678,7 +698,7 @@ export class WechatPublisher {
                                 content: processedContent,
                                 thumb_media_id,
                                 author: '',
-                                digest: '',
+                                digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
                                 need_open_comment: 0,
@@ -692,17 +712,18 @@ export class WechatPublisher {
 
             if (response.status === 200) {
                 // 检查业务错误码
-                if (response.json.errcode && response.json.errcode !== 0) {
-                    this.handleWechatError(response.json);
+                const draftData = response.json as WechatDraftResponse;
+                if (draftData.errcode && draftData.errcode !== 0) {
+                    this.handleWechatError(draftData);
                     return false;
                 }
 
                 // 成功，更新元数据
-                if (response.json.media_id) {
-                    updateData.media_id = response.json.media_id;
+                if (draftData.media_id) {
+                    updateData.media_id = draftData.media_id;
                 }
-                if (response.json.item) {
-                    updateData.item = response.json.item;
+                if (draftData.item) {
+                    updateData.item = draftData.item;
                 }
 
                 updateDraftMetadata(metadata, updateData);
@@ -715,7 +736,7 @@ export class WechatPublisher {
             } else {
                 throw new Error(`发布失败: HTTP ${response.status}`);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error('发布到微信时出错:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
             new Notice(`发布到微信时出错: ${errorMessage}`);
@@ -724,7 +745,7 @@ export class WechatPublisher {
     }
 
     // 辅助方法：执行带重试的请求
-    private async requestWithTokenRetry(requestFn: (token: string) => Promise<any>, accountId?: string): Promise<any> {
+    private async requestWithTokenRetry(requestFn: (token: string) => Promise<RequestUrlResponse>, accountId?: string): Promise<RequestUrlResponse> {
         const maxRetries = 2;
         const initialDelay = 1000;
 
@@ -733,7 +754,7 @@ export class WechatPublisher {
                 if (attempt > 0) {
                     const delay = initialDelay * Math.pow(2, attempt - 1);
                     this.logger.warn(`请求尝试第 ${attempt} 次重试，正在等待 ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => window.setTimeout(resolve, delay));
                 }
 
                 const accessToken = await this.getAccessToken(false, accountId);
@@ -742,8 +763,9 @@ export class WechatPublisher {
                 let response = await requestFn(accessToken);
 
                 // 处理 Token 失效
-                if (response.json && [40001, 40014, 42001].includes(response.json.errcode)) {
-                    this.logger.warn(`Token失效 (${response.json.errcode})，尝试刷新并重试...`);
+                const tokenCheckData = response.json ? (response.json as WechatBaseResponse) : null;
+                if (tokenCheckData && [40001, 40014, 42001].includes(tokenCheckData.errcode)) {
+                    this.logger.warn(`Token失效 (${tokenCheckData.errcode})，尝试刷新并重试...`);
                     const newToken = await this.getAccessToken(true, accountId);
                     if (newToken) {
                         response = await requestFn(newToken);
@@ -751,8 +773,8 @@ export class WechatPublisher {
                 }
 
                 return response;
-            } catch (error: any) {
-                const errorMsg = error.message || String(error);
+            } catch (error: unknown) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
                 const isNetworkError = errorMsg.includes('ERR_CONNECTION_CLOSED') || errorMsg.includes('net::');
 
                 if (isNetworkError && attempt < maxRetries) {
@@ -764,10 +786,13 @@ export class WechatPublisher {
                 throw error;
             }
         }
+
+        // 所有重试均失败
+        throw new Error('微信接口请求失败：所有重试均未成功');
     }
 
     // 统一处理微信API错误
-    private handleWechatError(responseJson: any) {
+    private handleWechatError(responseJson: WechatBaseResponse) {
         const errcode = responseJson.errcode;
         const errmsg = responseJson.errmsg;
 
@@ -804,11 +829,12 @@ export class WechatPublisher {
             case 41005:
                 message = "缺少多媒体文件数据，请检查上传的图片是否有效。";
                 break;
-            case 40164:
+            case 40164: {
                 const ipMatch = errmsg?.match(/\d+\.\d+\.\d+\.\d+/);
                 const ip = ipMatch ? ipMatch[0] : '当前IP';
                 message = `IP 白名单错误：${ip} 不在微信公众平台白名单中。请登录微信公众平台 → 设置与开发 → 基本配置 → IP 白名单，添加此 IP 地址。`;
                 break;
+            }
         }
 
         this.logger.error(message);

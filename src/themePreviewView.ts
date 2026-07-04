@@ -2,6 +2,11 @@ import { ItemView, WorkspaceLeaf, MarkdownRenderer, Component } from 'obsidian';
 import { MPConverter } from './converter';
 import type { ThemeManager } from './themeManager';
 
+/** WorkspaceLeaf internal API that includes updateHeader for refreshing view headers */
+interface LeafWithUpdateHeader extends WorkspaceLeaf {
+    updateHeader?: () => void;
+}
+
 export const VIEW_TYPE_THEME_PREVIEW = 'mp-theme-preview';
 
 const SAMPLE_MARKDOWN = `# 标题示例
@@ -37,6 +42,8 @@ function greet(name) {
 | 单元格 | 单元格 | 单元格 |
 
 ---
+
+![图片描述示例](https://picsum.photos/seed/mpublisher/400/250)
 
 正文段落，展示行间距和字体效果。中文排版需要关注字间距、行高和段落间距的协调。
 `;
@@ -82,9 +89,8 @@ export class ThemePreviewView extends ItemView {
         container.empty();
         container.classList.add('mp-theme-preview-container');
 
-        // Obsidian 内部 API，无公开类型定义
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.leaf as any).updateHeader?.();
+        // Obsidian 内部 API，leaf.updateHeader refreshes the view tab header
+        (this.leaf as LeafWithUpdateHeader).updateHeader?.();
 
         await this.renderPreview(container);
     }
@@ -115,7 +121,7 @@ export class ThemePreviewView extends ItemView {
             this.renderComponent,
         );
 
-        MPConverter.formatContent(previewArea);
+        MPConverter.formatContent(previewArea, { showImageCaption: true });
 
         const section = previewArea.querySelector('.mp-content-section') as HTMLElement;
         if (section && this.themeId) {

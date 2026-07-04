@@ -78,6 +78,19 @@
     margin: 1em auto;
 }
 
+/* 图片描述 */
+.mp-content-section img + .mp-image-caption {
+    margin-top: -0.6em;
+}
+.mp-content-section .mp-image-caption {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 1em 0;
+    padding: 0;
+}
+
 /* 引用块样式 */
 .mp-content-section blockquote p {
     margin: 0;

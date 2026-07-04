@@ -1,5 +1,104 @@
 # Changelog
 
+## [2.7.3] - 2026-07-03
+
+### ✨ 新增
+
+- **图片描述**：新增"图片描述"开关，开启后图片下方的 alt 文字会以居中灰色小字显示，复制/发布到公众号后样式保留
+
+---
+
+## [2.7.2] - 2026-07-01
+
+### 🎨 优化
+
+- **脚注格式优化**：正文链接文本加下划线样式，文末脚注列表格式改为 `[1] 文本：url`，更易阅读
+
+---
+
+## [2.7.1] - 2026-06-30
+
+### 🎨 优化
+
+- **脚注编号样式调整**：正文中的上标编号由 `1` 改为 `[1]`，与文末脚注列表格式统一
+
+---
+
+## [2.7.0] - 2026-06-30
+
+### ✨ 新增功能
+
+- **从属性提取标题和描述**：发布时自动从 Markdown frontmatter 中提取标题和描述，填充到发布表单。可在设置中开启（默认关闭），属性名可自定义（默认 `title` 和 `description`）
+- **发布摘要支持**：发布弹窗新增描述输入框，内容同步到微信草稿的 `digest` 字段（可选，120 字以内）
+- **外部链接转脚注**：预览、复制、发布时自动将 `[文本](https://url)` 外部链接转为脚注格式（文本 + 上标编号 + 文末 URL 列表），不修改源文件
+- **内部链接转纯文本**：`[[内部链接]]` 自动转为纯文本，去除链接标记
+
+### 🎨 优化
+
+- **发布弹窗重构**：精简布局，去除冗余分割线，左右 30%/70% 对齐，封面图预览区域扩大，遵循 Obsidian 主题色变量
+
+### 🐛 Bug 修复
+
+- **链接转脚注保留子元素**：链接内的图片、加粗等内联格式不再丢失
+- **脚注样式兼容微信**：脚注分隔线和文字颜色使用硬编码值，不再依赖 Obsidian CSS 变量（微信环境无法解析）
+- **重复链接去重**：同一 URL 多次引用时复用脚注编号
+- **链接转脚注异常处理**：添加 try-catch，异常时输出错误日志而非静默失败
+
+---
+
+## [2.6.2] - 2026-06-24
+
+### 🔧 代码规范
+
+- 最低支持版本调整为 1.12.0（Obsidian 1.13 尚未发布）
+- 微信 API 响应定义精确接口类型，替代 `any` 直接访问
+- `JSON.parse` 结果添加类型标注（素材缓存、Token 缓存、sessionStorage 数据）
+- `catch (error)` 改为 `catch (error: unknown)`，用 `instanceof Error` 替代直接访问属性
+- Logger 方法参数 `any[]` → `unknown[]`
+- `setCssProps` 使用 camelCase 属性名（`pointerEvents`）
+- Promise 调用加 `void` 前缀，避免未处理警告
+- 移除 `asWechatResponse` 辅助函数（含禁止的 eslint-disable）
+- 移除未使用的 `parseCssString` 导入
+- `text-indent: 0px` → `text-indent: 0`（兼容性）
+- README 补充英文安装说明和使用指南
+- ConfirmModal 支持 async onConfirm 回调
+
+---
+
+## [2.6.1] - 2026-06-24
+
+### 🔧 代码规范
+
+- 最低支持版本提升至 1.13.0
+- 使用 Obsidian 规范 API：`setCssProps` 替代直接 style 赋值、`sanitizeHTMLToDom` 替代 innerHTML、`activeDocument` 替代 `document`、`window.setTimeout` 替代 `setTimeout`、`RequestUrlResponse` 替代 `any` 类型
+- 移除不允许的 eslint-disable 注释，用 `window.fetch` 替代全局 `fetch`、用精确类型替代 `any`
+- 定义 `LeafWithUpdateHeader` 接口替代 `as any` 访问内部 API
+- async 回调改为 `void (async () => { ... })()` 模式，避免 Promise 未处理
+- 移除 await 非 Promise 的调用
+- enum 比较使用枚举值替代字符串字面量
+- CSS `!important` 替换为更高选择器特异性
+- `builtin-modules` 依赖替换为 Node.js 内置 `module.builtinModules`
+- README 添加英文标题和描述
+
+### 🐛 Bug 修复
+
+- CSS 内联失败时显示提示，不再静默忽略
+- 列表转换增加迭代上限防护，避免极端嵌套场景下无限循环
+
+### 🎨 优化
+
+- 列表处理逻辑统一为共享函数，复制和发布流程保持一致
+
+---
+
+## [2.5.4] - 2026-06-23
+
+### 🐛 Bug 修复
+
+- **代码块缩进全面保留**：代码块中**所有**普通空格（U+0020）替换为不间断空格（U+00A0），不仅行首缩进空格，还包括行内的对齐空格、key-value 之间的空格等，确保 JSON/YAML/Python 等代码在公众号中缩进完整保留
+
+---
+
 ## [2.5.3] - 2026-06-17
 
 ### 🐛 Bug 修复

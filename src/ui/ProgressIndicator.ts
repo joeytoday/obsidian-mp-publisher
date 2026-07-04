@@ -28,22 +28,22 @@ export class ProgressIndicator {
         }
 
         // 创建容器
-        this.container = document.createElement('div');
+        this.container = activeDocument.createElement('div');
         this.container.className = 'mp-progress-indicator';
         this.container.setAttribute('aria-live', 'polite');
 
         // 标题
-        const titleEl = document.createElement('div');
+        const titleEl = activeDocument.createElement('div');
         titleEl.className = 'mp-progress-title';
         titleEl.textContent = title;
         this.container.appendChild(titleEl);
 
         // 进度条容器
-        const progressContainer = document.createElement('div');
+        const progressContainer = activeDocument.createElement('div');
         progressContainer.className = 'mp-progress-bar-container';
 
         // 进度条
-        this.progressBar = document.createElement('div');
+        this.progressBar = activeDocument.createElement('div');
         this.progressBar.className = 'mp-progress-bar';
         this.progressBar.setCssProps({ '--progress-width': '0%' });
         progressContainer.appendChild(this.progressBar);
@@ -51,15 +51,15 @@ export class ProgressIndicator {
         this.container.appendChild(progressContainer);
 
         // 状态文本
-        this.statusText = document.createElement('div');
+        this.statusText = activeDocument.createElement('div');
         this.statusText.className = 'mp-progress-status';
         this.statusText.textContent = '初始化...';
         this.container.appendChild(this.statusText);
 
         // 警告提示
-        const warningEl = document.createElement('div');
+        const warningEl = activeDocument.createElement('div');
         warningEl.className = 'mp-progress-warning';
-        const warningIcon = document.createElement('span');
+        const warningIcon = activeDocument.createElement('span');
         warningIcon.className = 'warning-icon';
         warningIcon.textContent = '⚠️';
         warningEl.appendChild(warningIcon);
@@ -67,7 +67,7 @@ export class ProgressIndicator {
         this.container.appendChild(warningEl);
 
         // 添加到页面
-        document.body.appendChild(this.container);
+        activeDocument.body.appendChild(this.container);
         this.isVisible = true;
 
         // 初始化进度
@@ -144,7 +144,7 @@ export class ProgressIndicator {
         this.statusText.classList.add('success');
 
         // 1.5 秒后自动隐藏
-        setTimeout(() => this.hide(), 1500);
+        window.setTimeout(() => this.hide(), 1500);
     }
 
     /**

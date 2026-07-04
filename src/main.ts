@@ -90,15 +90,15 @@ export default class MPPublisherPlugin extends Plugin {
 
     // 添加功能按钮
     this.addRibbonIcon('send', '打开公众号发布', () => {
-      this.activateView();
+      void this.activateView();
     });
 
     // 添加打开预览命令
     this.addCommand({
       id: 'open-preview',
       name: '打开公众号发布插件',
-      callback: async () => {
-        await this.activateView();
+      callback: () => {
+        void this.activateView();
       },
     });
 
@@ -106,8 +106,8 @@ export default class MPPublisherPlugin extends Plugin {
     this.addCommand({
       id: 'theme-manager',
       name: '打开主题管理',
-      callback: async () => {
-        await this.activateThemeManager();
+      callback: () => {
+        void this.activateThemeManager();
       },
     });
 
@@ -135,7 +135,7 @@ export default class MPPublisherPlugin extends Plugin {
   async activateView() {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MP);
     if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+      void this.app.workspace.revealLeaf(leaves[0]);
       return;
     }
 
@@ -153,7 +153,7 @@ export default class MPPublisherPlugin extends Plugin {
   async activateThemeManager() {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_THEME_MANAGER);
     if (leaves.length > 0) {
-      this.app.workspace.revealLeaf(leaves[0]);
+      void this.app.workspace.revealLeaf(leaves[0]);
       return;
     }
 
@@ -169,8 +169,8 @@ export default class MPPublisherPlugin extends Plugin {
   }
 
   // 包装微信发布功能供UI调用
-  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile, accountId?: string): Promise<boolean> {
-    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file, accountId);
+  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile, accountId?: string, digest: string = ''): Promise<boolean> {
+    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file, accountId, digest);
   }
 
   onunload() {

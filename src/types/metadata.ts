@@ -1,5 +1,6 @@
 
 import { TFile } from 'obsidian';
+import type { MPSettings } from '../settings/settings';
 
 // 图片元数据接口
 export interface ImageMetadata {
@@ -33,7 +34,7 @@ export interface DocumentMetadata {
  * @param file 当前文档文件
  */
 export function getOrCreateMetadata(
-    plugin: { settingsManager: { getSettings(): any } },
+    plugin: { settingsManager: { getSettings(): MPSettings & { documentMetadata?: Record<string, DocumentMetadata> } } },
     file: TFile,
 ): DocumentMetadata {
     const settings = plugin.settingsManager.getSettings();
@@ -55,7 +56,7 @@ export function getOrCreateMetadata(
  * @param metadata 要保存的元数据
  */
 export async function updateMetadata(
-    plugin: { settingsManager: { getSettings(): any; updateSettings(updates: any): Promise<void> } },
+    plugin: { settingsManager: { getSettings(): MPSettings & { documentMetadata?: Record<string, DocumentMetadata> }; updateSettings(updates: Partial<MPSettings>): Promise<void> } },
     file: TFile,
     metadata: DocumentMetadata,
 ): Promise<void> {
@@ -76,12 +77,12 @@ export function addImageMetadata(metadata: DocumentMetadata, fileName: string, i
 }
 
 // 更新草稿元数据
-export function updateDraftMetadata(metadata: DocumentMetadata, draftData: any): void {
+export function updateDraftMetadata(metadata: DocumentMetadata, draftData: Partial<DraftMetadata>): void {
     metadata.draft = {
-        media_id: draftData.media_id,
-        item: draftData.item,
-        title: draftData.title,
-        content: draftData.content,
+        media_id: draftData.media_id ?? '',
+        item: draftData.item ?? [],
+        title: draftData.title ?? '',
+        content: draftData.content ?? '',
         updateTime: Date.now()
     };
 }

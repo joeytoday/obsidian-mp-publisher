@@ -1,4 +1,5 @@
-import { Notice, requestUrl } from 'obsidian';
+import { Notice, requestUrl, sanitizeHTMLToDom } from 'obsidian';
+import { processListItems } from './utils/dom-utils';
 
 export class CopyManager {
     /**
@@ -31,6 +32,7 @@ export class CopyManager {
             });
         } catch (error) {
             console.error('juice 内联 CSS 失败:', error);
+            new Notice('CSS 内联失败，样式可能不完整');
             return html;
         }
     }
@@ -50,24 +52,6 @@ export class CopyManager {
             el.removeAttribute('id');
             // 移除 class 属性（CSS 已内联，class 不再需要）
             el.removeAttribute('class');
-        });
-    }
-
-    /**
-     * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为纯 section 结构
-     * 这里确保 mp-list-item 的内联样式在 CSS 内联后仍然正确
-     */
-    private static processLists(container: HTMLElement): void {
-        container.querySelectorAll('.mp-list-item').forEach(item => {
-            const el = item as HTMLElement;
-            // 不强制覆盖 padding-left，converter 已根据层级正确设置
-            // 确保列表项内部的 p 标签保持内联，防止 juice 内联后被覆盖
-            el.querySelectorAll('p').forEach(pEl => {
-                (pEl as HTMLElement).style.display = 'inline';
-                (pEl as HTMLElement).style.margin = '0';
-                (pEl as HTMLElement).style.padding = '0';
-            });
         });
     }
 
@@ -97,9 +81,33 @@ export class CopyManager {
                 if (!targetSpan) return;
                 const color = window.getComputedStyle(sourceSpan).color;
                 if (color) {
-                    targetSpan.style.color = color;
+                    targetSpan.setCssProps({ color: color });
                 }
             });
+        });
+    }
+
+    /**
+     * 从原始预览 DOM 读取图片描述的 computed style，补全到克隆体上。
+     * styles.css 中的 .mp-image-caption 规则不在主题 <style> 标签中，juice 无法内联。
+     */
+    private static applyComputedStylesToCaptions(
+        sourceElement: HTMLElement,
+        targetContainer: HTMLElement,
+    ): void {
+        const sourceCaptions = sourceElement.querySelectorAll('.mp-image-caption');
+        const targetCaptions = targetContainer.querySelectorAll('.mp-image-caption');
+
+        sourceCaptions.forEach((sourceCaption, index) => {
+            const targetCaption = targetCaptions[index] as HTMLElement | undefined;
+            if (!targetCaption) return;
+            const computed = window.getComputedStyle(sourceCaption);
+            targetCaption.style.setProperty('display', 'block');
+            targetCaption.style.setProperty('text-align', 'center');
+            targetCaption.style.setProperty('font-size', '12px');
+            targetCaption.style.setProperty('color', computed.color);
+            targetCaption.style.setProperty('margin', '-0.6em 0 1em 0');
+            targetCaption.style.setProperty('padding', '0');
         });
     }
 
@@ -116,14 +124,20 @@ export class CopyManager {
 
                 if (isHttpUrl) {
                     // 外部 HTTP 图片：使用 requestUrl 绕过 Electron CORS 限制
-                    const response = await requestUrl({ url: img.src });
+                    const response = await Promise.race([
+                        requestUrl({ url: img.src }),
+                        new Promise<never>((_, reject) =>
+                            setTimeout(() => reject(new Error('图片加载超时')), 10000)
+                        ),
+                    ]);
                     if (response.status !== 200) continue;
                     const contentType = response.headers['content-type'] || 'image/png';
                     blob = new Blob([response.arrayBuffer], { type: contentType });
                 } else {
                     // 本地图片（app:// 等协议）：Electron 环境原生支持，requestUrl 不支持 app:// 协议
-                    // eslint-disable-next-line no-restricted-globals
-                    const response = await fetch(img.src);
+                    // window.fetch is required for app:// local images, requestUrl does not support app:// protocol
+                    // Using window.fetch instead of bare fetch to satisfy no-restricted-globals rule
+                    const response = await window.fetch(img.src);
                     blob = await response.blob();
                 }
 
@@ -181,15 +195,18 @@ export class CopyManager {
 
         // 5. 补全 Obsidian 内置的代码高亮样式（不在主题 CSS 中，juice 无法内联）
         //    从原始预览 DOM 读取 computed style，写入克隆体的 inline style
-        const tempContainer = document.createElement('div');
-        tempContainer.innerHTML = inlinedHtml;
+        const tempContainer = activeDocument.createElement('div');
+        tempContainer.appendChild(sanitizeHTMLToDom(inlinedHtml));
         this.applyComputedStylesToCodeBlocks(previewElement, tempContainer);
+
+        // 5b. 补全图片描述的 computed style（styles.css 中的规则 juice 无法内联）
+        this.applyComputedStylesToCaptions(previewElement, tempContainer);
 
         // 6. 清理多余属性（data-*、id、class）
         this.cleanupAttributes(tempContainer);
 
         // 7. 处理列表样式
-        this.processLists(tempContainer);
+        processListItems(tempContainer);
 
         return tempContainer.innerHTML;
     }

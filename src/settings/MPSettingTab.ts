@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import { VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from '../guideView';
 import MPPlugin from '../main';
 import { WechatAccount } from './settings';
@@ -38,7 +38,7 @@ export class MPSettingTab extends PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('打开')
                 .onClick(() => {
-                    this.plugin.activateThemeManager();
+                    void this.plugin.activateThemeManager();
                 }));
 
         // ── 公众号 ──────────────────────────────────
@@ -85,6 +85,60 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                 }));
 
+        new Setting(containerEl)
+            .setName('从属性提取标题和描述')
+            .setDesc('开启后，发布时自动从 Markdown 属性中提取标题和描述，填充到发布表单')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().extractFromFrontmatter)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        extractFromFrontmatter: value,
+                    });
+                    titleKeySetting.settingEl.toggle(value);
+                    descKeySetting.settingEl.toggle(value);
+                }));
+
+        const titleKeySetting = new Setting(containerEl)
+            .setName('标题属性名')
+            .setDesc('属性中标题对应的字段名')
+            .addText(text => text
+                .setPlaceholder('title')
+                .setValue(this.plugin.settingsManager.getSettings().frontmatterTitleKey)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        frontmatterTitleKey: value || 'title',
+                    });
+                }));
+
+        const descKeySetting = new Setting(containerEl)
+            .setName('描述属性名')
+            .setDesc('属性中描述对应的字段名')
+            .addText(text => text
+                .setPlaceholder('description')
+                .setValue(this.plugin.settingsManager.getSettings().frontmatterDescriptionKey)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        frontmatterDescriptionKey: value || 'description',
+                    });
+                }));
+
+        const isExtractEnabled = this.plugin.settingsManager.getSettings().extractFromFrontmatter;
+        titleKeySetting.settingEl.toggle(isExtractEnabled);
+        descKeySetting.settingEl.toggle(isExtractEnabled);
+
+        // ── 图片设置 ──────────────────────────────────
+
+        new Setting(containerEl)
+            .setName('图片描述')
+            .setDesc('开启后，预览、复制和发布时自动在图片下方显示描述文字（取自 ![描述](链接) 中的描述）')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().showImageCaption)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        showImageCaption: value,
+                    });
+                }));
+
         // ── 其他 ──────────────────────────────────
 
         new Setting(containerEl)
@@ -120,11 +174,13 @@ export class MPSettingTab extends PluginSettingTab {
                 value: account.name,
             },
         });
-        nameInput.addEventListener('change', async () => {
-            account.name = nameInput.value;
-            await this.plugin.settingsManager.updateSettings({
-                wechatAccounts: settings.wechatAccounts,
-            });
+        nameInput.addEventListener('change', () => {
+            void (async () => {
+                account.name = nameInput.value;
+                await this.plugin.settingsManager.updateSettings({
+                    wechatAccounts: settings.wechatAccounts,
+                });
+            })();
         });
 
         if (isActive) {
@@ -137,35 +193,39 @@ export class MPSettingTab extends PluginSettingTab {
                 text: '设为默认',
                 cls: 'mp-account-action-btn',
             });
-            setDefaultBtn.addEventListener('click', async () => {
-                await this.plugin.settingsManager.updateSettings({
-                    activeWechatAccountId: account.id,
-                    wechatAppId: account.appId,
-                    wechatAppSecret: account.appSecret,
-                });
-                this.display();
+            setDefaultBtn.addEventListener('click', () => {
+                void (async () => {
+                    await this.plugin.settingsManager.updateSettings({
+                        activeWechatAccountId: account.id,
+                        wechatAppId: account.appId,
+                        wechatAppSecret: account.appSecret,
+                    });
+                    this.display();
+                })();
             });
         }
         const deleteBtn = actions.createEl('button', {
             text: '删除',
             cls: 'mp-account-action-btn mp-account-action-btn--danger',
         });
-        deleteBtn.addEventListener('click', async () => {
-            const updatedAccounts = settings.wechatAccounts.filter(a => a.id !== account.id);
-            const updates: Partial<typeof settings> = {
-                wechatAccounts: updatedAccounts,
-            };
-            if (isActive && updatedAccounts.length > 0) {
-                updates.activeWechatAccountId = updatedAccounts[0].id;
-                updates.wechatAppId = updatedAccounts[0].appId;
-                updates.wechatAppSecret = updatedAccounts[0].appSecret;
-            } else if (updatedAccounts.length === 0) {
-                updates.activeWechatAccountId = '';
-                updates.wechatAppId = '';
-                updates.wechatAppSecret = '';
-            }
-            await this.plugin.settingsManager.updateSettings(updates);
-            this.display();
+        deleteBtn.addEventListener('click', () => {
+            void (async () => {
+                const updatedAccounts = settings.wechatAccounts.filter(a => a.id !== account.id);
+                const updates: Partial<typeof settings> = {
+                    wechatAccounts: updatedAccounts,
+                };
+                if (isActive && updatedAccounts.length > 0) {
+                    updates.activeWechatAccountId = updatedAccounts[0].id;
+                    updates.wechatAppId = updatedAccounts[0].appId;
+                    updates.wechatAppSecret = updatedAccounts[0].appSecret;
+                } else if (updatedAccounts.length === 0) {
+                    updates.activeWechatAccountId = '';
+                    updates.wechatAppId = '';
+                    updates.wechatAppSecret = '';
+                }
+                await this.plugin.settingsManager.updateSettings(updates);
+                this.display();
+            })();
         });
 
         // 卡片内容：AppID + AppSecret
@@ -209,7 +269,7 @@ export class MPSettingTab extends PluginSettingTab {
     private async openDocView(viewType: string): Promise<void> {
         const leaves = this.app.workspace.getLeavesOfType(viewType);
         if (leaves.length > 0) {
-            this.app.workspace.revealLeaf(leaves[0]);
+            void this.app.workspace.revealLeaf(leaves[0]);
             return;
         }
         const leaf = this.app.workspace.getLeaf(true);
