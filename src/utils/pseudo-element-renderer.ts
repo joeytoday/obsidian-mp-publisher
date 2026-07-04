@@ -144,14 +144,27 @@ export function splitCSSBlocks(css: string): string[] {
     const blocks: string[] = [];
     let depth = 0;
     let current = '';
+    let inString = false;
+    let stringChar = '';
 
     for (const ch of css) {
-        if (ch === '{') { depth++; current += ch; }
-        else if (ch === '}') {
+        if (inString) {
+            current += ch;
+            if (ch === stringChar) inString = false;
+        } else if (ch === '"' || ch === "'") {
+            inString = true;
+            stringChar = ch;
+            current += ch;
+        } else if (ch === '{') {
+            depth++;
+            current += ch;
+        } else if (ch === '}') {
             depth--;
             current += ch;
             if (depth === 0) { blocks.push(current); current = ''; }
-        } else { current += ch; }
+        } else {
+            current += ch;
+        }
     }
     if (current.trim()) blocks.push(current);
     return blocks;
@@ -277,7 +290,7 @@ function tokenizeContent(value: string, counterMap: Map<string, number> | undefi
         // 跳过 token 之间的空白
         while (i < value.length && /\s/.test(value[i])) i++;
         if (i >= value.length) break;
-                    const hexMatch = value.substring(i).match(/^([0-9A-Fa-f]{1,6})\s?/);
+
         // 字符串引号段: "..." 或 '...'
         if (value[i] === '"' || value[i] === "'") {
             const quote = value[i];
@@ -287,7 +300,7 @@ function tokenizeContent(value: string, counterMap: Map<string, number> | undefi
                 if (value[i] === '\\' && i + 1 < value.length) {
                     i++; // 跳过反斜杠
                     // Unicode 转义 \XXXX
-                    const hexMatch = value.substring(i).match(/^([0-9A-Fa-f]{4})\s?/);
+                    const hexMatch = value.substring(i).match(/^([0-9A-Fa-f]{1,6})\s?/);
                     if (hexMatch) {
                         seg += String.fromCodePoint(parseInt(hexMatch[1], 16));
                         i += hexMatch[0].length;

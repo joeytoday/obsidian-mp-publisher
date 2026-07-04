@@ -151,6 +151,22 @@ describe('splitCSSBlocks', () => {
         expect(blocks).toHaveLength(1);
     });
 
+    it('ignores braces inside quoted strings', () => {
+        const css = '.a { content: "}"; } .b { color: red; }';
+        const blocks = splitCSSBlocks(css);
+        expect(blocks).toHaveLength(2);
+        expect(blocks[0].trim()).toBe('.a { content: "}"; }');
+        expect(blocks[1].trim()).toBe('.b { color: red; }');
+    });
+
+    it('ignores braces inside single-quoted strings', () => {
+        const css = ".x::after { content: '{'; } .y { margin: 0; }";
+        const blocks = splitCSSBlocks(css);
+        expect(blocks).toHaveLength(2);
+        expect(blocks[0].trim()).toBe(".x::after { content: '{'; }");
+        expect(blocks[1].trim()).toBe('.y { margin: 0; }');
+    });
+
     it('handles empty input', () => {
         expect(splitCSSBlocks('')).toHaveLength(0);
     });
@@ -292,6 +308,12 @@ describe('resolveContent', () => {
     it('resolves string with unicode escapes', () => {
         const result = resolveContent('"\\201C"', mockEl, undefined);
         expect(result).toBe('“');
+    });
+
+    it('resolves string with variable-length unicode escapes (1-6 hex digits)', () => {
+        // CSS spec allows 1-6 hex digits: \A (newline), \2014 (em dash), etc.
+        expect(resolveContent('"\\A"', mockEl, undefined)).toBe('\n');
+        expect(resolveContent('"\\2014"', mockEl, undefined)).toBe('—');
     });
 
     it('resolves counter() with default decimal style', () => {
