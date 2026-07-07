@@ -36,7 +36,7 @@ MP Publisher 是一个 Obsidian 插件，用于撰写文章并发布到微信公
 - ✨ **伪元素自动转换**：`::before` / `::after` 伪元素和 CSS 计数器（`counter-reset` / `counter-increment`）在复制/发布时自动转为真实 DOM 元素，公众号编辑器完美兼容
 - 📖 **编写自定义主题前请阅读 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)**，了解可用选择器和完整模板
 
-https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe
+https://github.com/user-attachments/assets/e807ce6e-eb76-4465-93f9-92a9f9668e36
 
 ### 👁️ 实时预览
 - **所见即所得**：实时预览公众号效果
