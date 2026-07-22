@@ -618,10 +618,8 @@ export class WechatPublisher {
         accountId?: string,
         digest: string = ''
     ): Promise<boolean> {
+        const progress = getProgressIndicator(this.app);
         try {
-            // 获取进度指示器
-            const progress = getProgressIndicator(this.app);
-            
             // 使用 sanitizeHTMLToDom 统计图片数量，避免 DOMParser 破坏已内联的样式结构
             const countDiv = activeDocument.createElement('div');
             countDiv.appendChild(sanitizeHTMLToDom(content));
@@ -766,6 +764,7 @@ export class WechatPublisher {
         } catch (error: unknown) {
             this.logger.error('发布到微信时出错:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
+            progress.showError(`发布失败：${errorMessage}`);
             new Notice(`发布到微信时出错: ${errorMessage}`);
             return false;
         }

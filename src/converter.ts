@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Component, sanitizeHTMLToDom } from 'obsidian';
+import { App, MarkdownRenderer, Component, Notice, sanitizeHTMLToDom } from 'obsidian';
 import { cleanObsidianUIElements } from './utils/html-cleaner';
 import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSVG } from './utils/math-formula';
 import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
@@ -594,6 +594,54 @@ function convertCodeBlockLines(container: HTMLElement): void {
         });
     });
 }
+const VIDEO_EXT_REGEX = /\.(mp4|webm|ogg|ogv|mov|avi|mkv|m4v|flv|wmv)(\?|$)/i;
+
+/**
+ * 移除容器中的视频元素，返回被移除的视频文件名列表。
+ * 微信公众号不支持通过 API 上传视频，需要在后台手动上传。
+ *
+ * 处理两种来源：
+ * 1. Obsidian 内部嵌入 `![[xxx.mp4]]` → `<span class="internal-embed"><video>...</video></span>`
+ * 2. Markdown 中的原生 HTML `<video>` 标签
+ */
+function stripVideoElements(container: HTMLElement): string[] {
+    const videoNames: string[] = [];
+    const removed: Element[] = [];
+
+    // 1. Obsidian 内部嵌入的视频（必须在 formatContent 的图片处理之前移除，
+    //    否则 internal-embed[alt][src] 会被当成图片处理，尝试上传视频文件导致卡住）
+    container.querySelectorAll('span.internal-embed[src]').forEach(el => {
+        const src = el.getAttribute('src') || '';
+        const linktext = src.split('|')[0];
+        if (VIDEO_EXT_REGEX.test(linktext) || el.querySelector('video')) {
+            videoNames.push(linktext.split('/').pop() || linktext);
+            removed.push(el);
+        }
+    });
+
+    // 2. 原生 <video> 标签（Markdown 中直接写的 HTML）
+    container.querySelectorAll('video').forEach(video => {
+        const src = video.getAttribute('src') ||
+            video.querySelector('source')?.getAttribute('src') || '';
+        const name = src ? (src.split('/').pop()?.split('?')[0] || '视频') : '视频';
+        if (!videoNames.includes(name)) {
+            videoNames.push(name);
+        }
+        removed.push(video);
+    });
+
+    // 移除元素，并清理因此变空的父级 <p>（避免发布后出现空行）
+    for (const el of removed) {
+        const parent = el.parentElement;
+        el.remove();
+        if (parent && parent.tagName === 'P' && !parent.textContent?.trim() && !parent.querySelector('img')) {
+            parent.remove();
+        }
+    }
+
+    return videoNames;
+}
+
 /**
  * 将 Markdown 转换为带主题样式的 HTML（用于发布）
  * 使用 juice 将 CSS 内联到 HTML 元素的 style 属性中
@@ -634,6 +682,13 @@ export async function markdownToHtml(
 
         // 清理 Obsidian UI 元素
         cleanObsidianUIElements(tempDiv);
+
+        // 移除视频元素（微信不支持 API 上传视频，需在后台手动上传）
+        // 必须在 formatContent 之前，否则视频 internal-embed 会被当成图片处理
+        const strippedVideos = stripVideoElements(tempDiv);
+        if (strippedVideos.length > 0) {
+            new Notice(`已跳过 ${strippedVideos.length} 个视频（${strippedVideos.join('、')}），视频需在公众号后台手动上传`, 8000);
+        }
 
         // 格式化内容（创建 section 容器、处理代码块等）
         MPConverter.formatContent(tempDiv, { showImageCaption });

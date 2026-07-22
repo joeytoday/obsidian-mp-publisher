@@ -1,6 +1,7 @@
 import { App, MarkdownView, Modal, Notice, Setting } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
+import { getProgressIndicator } from './ProgressIndicator';
 
 interface SelectedMaterial {
 	media_id: string;
@@ -562,32 +563,39 @@ export class PublishModal extends Modal {
 
 				// 使用 markdownToHtml 渲染内容（通过 juice 内联 CSS，确保样式在公众号后台正确显示）
 				const content = this.markdownView.getViewData();
-				const htmlContent = await markdownToHtml(
-					this.app,
-					content,
-					this.markdownView.file?.path || '',
-					this.plugin.themeManager,
-					this.plugin.settings.convertMathToSVG,
-					this.plugin.settings.showImageCaption,
-				);
 
-				if (platform === 'wechat') {
-					// 获取选中的公众号账号
-					const selectedAccountId = this.accountSelect.value;
-					const selectedAccount = this.plugin.settingsManager.getWechatAccountById(selectedAccountId);
+				publishButton.disabled = true;
+				publishButton.textContent = '正在转换内容...';
+				const progress = getProgressIndicator(this.app);
+				progress.show(1, '正在转换内容...');
 
-					if (!selectedAccount || !selectedAccount.appId || !selectedAccount.appSecret) {
-						new Notice('请先在设置中配置公众号的 AppID 和 AppSecret');
-						return;
-					}
+				let publishStarted = false;
+				try {
+					const htmlContent = await markdownToHtml(
+						this.app,
+						content,
+						this.markdownView.file?.path || '',
+						this.plugin.themeManager,
+						this.plugin.settings.convertMathToSVG,
+						this.plugin.settings.showImageCaption,
+					);
 
-					// 检查是否选择了封面图
-					if (!this.selectedCoverMediaId) {
-						new Notice('请先选择封面图');
-						return;
-					}
+					if (platform === 'wechat') {
+						// 获取选中的公众号账号
+						const selectedAccountId = this.accountSelect.value;
+						const selectedAccount = this.plugin.settingsManager.getWechatAccountById(selectedAccountId);
 
-					try {
+						if (!selectedAccount || !selectedAccount.appId || !selectedAccount.appSecret) {
+							new Notice('请先在设置中配置公众号的 AppID 和 AppSecret');
+							return;
+						}
+
+						// 检查是否选择了封面图
+						if (!this.selectedCoverMediaId) {
+							new Notice('请先选择封面图');
+							return;
+						}
+
 						// 获取选中的封面图 media_id
 						const selectedMaterial = sessionStorage.getItem('selected_material');
 						if (selectedMaterial) {
@@ -601,6 +609,7 @@ export class PublishModal extends Modal {
 							return;
 						}
 
+						publishStarted = true;
 						publishButton.textContent = '正在发布...';
 						const success = await this.plugin.publishToWechat(
 							title,
@@ -614,12 +623,16 @@ export class PublishModal extends Modal {
 						if (success) {
 							this.close();
 						}
-					} catch (error: unknown) {
-						console.error('发布失败:', error);
-						new Notice('发布失败：' + (error instanceof Error ? error.message : String(error)));
-						publishButton.disabled = false;
-						publishButton.textContent = '发布';
 					}
+				} catch (error: unknown) {
+					console.error('发布失败:', error);
+					new Notice('发布失败：' + (error instanceof Error ? error.message : String(error)));
+				} finally {
+					if (!publishStarted) {
+						progress.hide();
+					}
+					publishButton.disabled = false;
+					publishButton.textContent = '发布';
 				}
 			})();
 		});
