@@ -165,9 +165,9 @@
   color: #a0aec0;
 }
 
-/* 高亮：背景色 #F9DB6B */
+/* 高亮：背景色 #EAEEC8 */
 .mp-content-section mark {
-  background-color: #F9DB6B;
+  background-color: #EAEEC8;
   padding: 2px 4px;
   border-radius: 2px;
 }
