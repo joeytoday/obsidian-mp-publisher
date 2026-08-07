@@ -45,13 +45,15 @@
 3. 设置 IP 白名单：填入你当前的 IP 地址。家用宽带 IP 经常变？直接填 `0.0.0.0/0` 允许所有 IP，省去频繁更新的麻烦
 4. 在插件设置中添加公众号，填入 AppID 和 AppSecret 即可
 
+发布弹窗中的封面图为可选：不选时自动使用正文中第一张成功上传的图片作为封面；正文没有可用图片时会提示手动选择（微信图文消息的封面为必填）。
+
 <video src="https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95"  controls></video>
 
-### 从属性提取标题和描述
+### 从属性提取标题、描述和作者
 
-发布时可以从 Markdown frontmatter 中自动提取标题和描述，填充到发布表单，省去手动填写。属性名支持自定义（默认 `title` 和 `description`）。
+发布时可以从 Markdown frontmatter 中自动提取标题、描述和作者，填充到发布表单，省去手动填写。属性名支持自定义（默认 `title`、`description` 和 `author`）。
 
-在设置中开启「从属性提取标题和描述」即可使用。
+在设置中开启「从属性提取标题、描述和作者」即可使用。
 
 <img width="818" height="249" alt="设置中开启从属性提取" src="https://github.com/user-attachments/assets/27f958a5-25d6-45c5-a3f9-ac7951268d82" />
 
@@ -60,7 +62,7 @@
 -- | --
 <img width="376" height="207" alt="属性设置" src="https://github.com/user-attachments/assets/68af950d-eb53-4182-a39b-a59848224d4e" /> | <img width="539" height="265" alt="发布效果" src="https://github.com/user-attachments/assets/35474d7e-baa1-4914-99de-a3d648d10f71" />
 
-发布弹窗中也新增了描述输入框，内容会同步到微信草稿的摘要字段（120 字以内），可选填。
+发布弹窗中也新增了描述输入框，内容会同步到微信草稿的摘要字段（120 字以内），可选填。作者字段（16 字以内）会同步到微信草稿的作者字段，显示在公众号文章标题下方，支持从发布过的历史作者中选择，也可以直接输入新作者，输入过的作者会自动进入候选列表。
 
 ### 图片描述
 

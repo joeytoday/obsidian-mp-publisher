@@ -372,6 +372,7 @@ export class PublishModal extends Modal {
 	markdownView: MarkdownView;
 	titleInput: HTMLInputElement;
 	descriptionInput: HTMLInputElement;
+	authorInput: HTMLInputElement;
 	platformSelect: HTMLSelectElement;
 	accountSelect: HTMLSelectElement;
 	coverImagePreview: HTMLElement;
@@ -420,7 +421,25 @@ export class PublishModal extends Modal {
 
 		descSetting.controlEl.appendChild(this.descriptionInput);
 
-		// 从 frontmatter 提取标题和描述
+		// 作者输入（可从历史作者中选择，也可直接输入新作者）
+		const authorSetting = new Setting(contentEl)
+			.setName('作者')
+			.setDesc('显示在公众号文章标题下方，可选择历史作者或输入新作者');
+
+		this.authorInput = activeDocument.createElement('input');
+		this.authorInput.type = 'text';
+		this.authorInput.className = 'full-width-input';
+		this.authorInput.placeholder = '可选，16字以内';
+		this.authorInput.maxLength = 16;
+		this.authorInput.setAttribute('list', 'mp-author-datalist');
+
+		const authorDataList = activeDocument.createElement('datalist');
+		authorDataList.id = 'mp-author-datalist';
+
+		authorSetting.controlEl.appendChild(this.authorInput);
+		authorSetting.controlEl.appendChild(authorDataList);
+
+		// 从 frontmatter 提取标题、描述和作者
 		if (this.plugin.settings.extractFromFrontmatter) {
 			const file = this.markdownView.file;
 			if (file) {
@@ -429,6 +448,7 @@ export class PublishModal extends Modal {
 				if (frontmatter) {
 					const titleKey = this.plugin.settings.frontmatterTitleKey;
 					const descKey = this.plugin.settings.frontmatterDescriptionKey;
+					const authorKey = this.plugin.settings.frontmatterAuthorKey;
 					const titleValue: unknown = frontmatter[titleKey];
 					if (typeof titleValue === 'string' && titleValue) {
 						this.titleInput.value = titleValue;
@@ -437,8 +457,29 @@ export class PublishModal extends Modal {
 					if (typeof descValue === 'string' && descValue) {
 						this.descriptionInput.value = descValue;
 					}
+					const authorValue: unknown = frontmatter[authorKey];
+					if (typeof authorValue === 'string' && authorValue) {
+						this.authorInput.value = authorValue;
+					}
 				}
 			}
+		}
+
+		// 默认填入上次发布使用的作者
+		if (!this.authorInput.value && this.plugin.settings.authorList.length > 0) {
+			this.authorInput.value = this.plugin.settings.authorList[this.plugin.settings.authorList.length - 1];
+		}
+
+		// 填充作者候选列表：历史发布过的作者 + 当前属性中的作者
+		const authorCandidates = [...this.plugin.settings.authorList];
+		const currentAuthor = this.authorInput.value;
+		if (currentAuthor && !authorCandidates.includes(currentAuthor)) {
+			authorCandidates.push(currentAuthor);
+		}
+		for (const name of authorCandidates) {
+			const option = activeDocument.createElement('option');
+			option.value = name;
+			authorDataList.appendChild(option);
 		}
 
 		// 平台选择
@@ -492,7 +533,7 @@ export class PublishModal extends Modal {
 
 		const coverLeft = coverSetting.createDiv({ cls: 'cover-setting-left' });
 		coverLeft.createDiv({ cls: 'cover-setting-label', text: '封面图' });
-		coverLeft.createDiv({ cls: 'cover-setting-desc', text: '选择文章封面图' });
+		coverLeft.createDiv({ cls: 'cover-setting-desc', text: '可选，未选择时使用正文第一张图' });
 
 		const selectCoverButton = coverLeft.createEl('button', {
 			cls: 'mod-cta',
@@ -501,7 +542,7 @@ export class PublishModal extends Modal {
 
 		const coverRight = coverSetting.createDiv({ cls: 'cover-setting-right' });
 		this.coverImagePreview = coverRight.createDiv({ cls: 'cover-preview' });
-		this.coverImagePreview.textContent = '无封面图';
+		this.coverImagePreview.textContent = '未选择，将使用正文第一张图';
 		selectCoverButton.addEventListener('click', () => {
 			// 打开封面图选择模态框
 			const selectedAccountId = this.accountSelect.value;
@@ -551,11 +592,6 @@ export class PublishModal extends Modal {
 					return;
 				}
 
-				if (platform === 'wechat' && !this.coverImagePreview.querySelector('img')) {
-					new Notice('请选择封面图');
-					return;
-				}
-
 				if (!this.markdownView.file) {
 					new Notice('无法获取当前文件');
 					return;
@@ -590,23 +626,14 @@ export class PublishModal extends Modal {
 							return;
 						}
 
-						// 检查是否选择了封面图
-						if (!this.selectedCoverMediaId) {
-							new Notice('请先选择封面图');
-							return;
-						}
-
-						// 获取选中的封面图 media_id
-						const selectedMaterial = sessionStorage.getItem('selected_material');
-						if (selectedMaterial) {
-							const material = JSON.parse(selectedMaterial) as SelectedMaterial;
-							this.selectedCoverMediaId = material.media_id;
-						}
-
-						// 再次检查 media_id 是否有效
-						if (!this.selectedCoverMediaId) {
-							new Notice('封面图 media_id 无效，请重新选择封面图');
-							return;
+						// 已选择封面时，从 sessionStorage 获取最新的 media_id；
+						// 未选择时保持为空，由发布流程回退到正文第一张图
+						if (this.selectedCoverMediaId) {
+							const selectedMaterial = sessionStorage.getItem('selected_material');
+							if (selectedMaterial) {
+								const material = JSON.parse(selectedMaterial) as SelectedMaterial;
+								this.selectedCoverMediaId = material.media_id;
+							}
 						}
 
 						publishStarted = true;
@@ -617,7 +644,8 @@ export class PublishModal extends Modal {
 							this.selectedCoverMediaId,
 							this.markdownView.file,
 							selectedAccountId,
-							this.descriptionInput.value
+							this.descriptionInput.value,
+							this.authorInput.value
 						);
 
 						if (success) {

@@ -31,10 +31,13 @@ export interface MPSettings {
     hiddenThemeIds: string[];
     // 数学公式设置
     convertMathToSVG: boolean;
-    // 从 frontmatter 提取标题和描述
+    // 从 frontmatter 提取标题、描述和作者
     extractFromFrontmatter: boolean;
     frontmatterTitleKey: string;
     frontmatterDescriptionKey: string;
+    frontmatterAuthorKey: string;
+    // 历史发布过的作者（发布弹窗作者候选列表）
+    authorList: string[];
     // 图片描述（默认关闭）
     showImageCaption: boolean;
 }
@@ -59,10 +62,13 @@ const DEFAULT_SETTINGS: MPSettings = {
     hiddenThemeIds: [],
     // 数学公式默认设置
     convertMathToSVG: true,
-    // 从 frontmatter 提取标题和描述（默认关闭）
+    // 从 frontmatter 提取标题、描述和作者（默认关闭）
     extractFromFrontmatter: false,
     frontmatterTitleKey: 'title',
     frontmatterDescriptionKey: 'description',
+    frontmatterAuthorKey: 'author',
+    // 历史发布过的作者
+    authorList: [],
     // 图片描述（默认关闭）
     showImageCaption: false,
 };

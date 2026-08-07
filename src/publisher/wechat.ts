@@ -399,6 +399,27 @@ export class WechatPublisher {
         }
     }
 
+    // 从正文第一张已上传的图片推导封面 media_id（复用 processDocumentImages 的上传缓存）
+    private resolveCoverFromContent(content: string, metadata: DocumentMetadata): string {
+        const tempDiv = activeDocument.createElement('div');
+        tempDiv.appendChild(sanitizeHTMLToDom(content));
+
+        for (const img of Array.from(tempDiv.querySelectorAll('img'))) {
+            const src = img.getAttribute('src');
+            if (!src) continue;
+
+            // 缓存 key 与 processImage 保持一致：网络图片用完整 URL，其余用文件名
+            const cacheKey = src.startsWith('http')
+                ? src
+                : (src.split('/').pop() ?? '').split('?')[0];
+            if (!cacheKey) continue;
+
+            const mediaId = isImageUploaded(metadata, cacheKey)?.media_id;
+            if (mediaId) return mediaId;
+        }
+        return '';
+    }
+
     /**
      * 将代码块中的换行符转为 <br> 标签
      * 微信公众号 API 会吃掉 <code> 中的 \n 换行符，导致代码不换行
@@ -616,7 +637,8 @@ export class WechatPublisher {
         thumb_media_id: string,
         file: TFile,
         accountId?: string,
-        digest: string = ''
+        digest: string = '',
+        author: string = ''
     ): Promise<boolean> {
         const progress = getProgressIndicator(this.app);
         try {
@@ -652,6 +674,17 @@ export class WechatPublisher {
             // 获取元数据
             const metadata = getOrCreateMetadata(this.plugin, file);
 
+            // 未选择封面时，使用正文第一张图片作为封面
+            if (!thumb_media_id) {
+                thumb_media_id = this.resolveCoverFromContent(content, metadata);
+                if (!thumb_media_id) {
+                    progress.hide();
+                    new Notice('正文中没有可用的图片作为封面，请手动选择封面图');
+                    return false;
+                }
+                this.logger.debug(`未选择封面，使用正文第一张图片作为封面: ${thumb_media_id}`);
+            }
+
             // 准备更新数据
             let updateData = {
                 title,
@@ -674,7 +707,7 @@ export class WechatPublisher {
                                 title,
                                 content: processedContent,
                                 thumb_media_id,
-                                author: '',
+                                author,
                                 digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
@@ -693,7 +726,7 @@ export class WechatPublisher {
                                 title,
                                 content: processedContent,
                                 thumb_media_id,
-                                author: '',
+                                author,
                                 digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
@@ -722,7 +755,7 @@ export class WechatPublisher {
                                 title,
                                 content: processedContent,
                                 thumb_media_id,
-                                author: '',
+                                author,
                                 digest,
                                 show_cover_pic: thumb_media_id ? 1 : 0,
                                 content_source_url: '',
@@ -741,6 +774,13 @@ export class WechatPublisher {
                 if (draftData.errcode && draftData.errcode !== 0) {
                     this.handleWechatError(draftData);
                     return false;
+                }
+
+                // 发布成功，将作者累积到候选列表
+                if (author && !this.plugin.settings.authorList.includes(author)) {
+                    await this.plugin.settingsManager.updateSettings({
+                        authorList: [...this.plugin.settings.authorList, author],
+                    });
                 }
 
                 // 成功，更新元数据

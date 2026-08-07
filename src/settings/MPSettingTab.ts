@@ -86,8 +86,8 @@ export class MPSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('从属性提取标题和描述')
-            .setDesc('开启后，发布时自动从 Markdown 属性中提取标题和描述，填充到发布表单')
+            .setName('从属性提取标题、描述和作者')
+            .setDesc('开启后，发布时自动从 Markdown 属性中提取标题、描述和作者，填充到发布表单')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settingsManager.getSettings().extractFromFrontmatter)
                 .onChange(async (value) => {
@@ -96,6 +96,7 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                     titleKeySetting.settingEl.toggle(value);
                     descKeySetting.settingEl.toggle(value);
+                    authorKeySetting.settingEl.toggle(value);
                 }));
 
         const titleKeySetting = new Setting(containerEl)
@@ -122,9 +123,22 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                 }));
 
+        const authorKeySetting = new Setting(containerEl)
+            .setName('作者属性名')
+            .setDesc('属性中作者对应的字段名')
+            .addText(text => text
+                .setPlaceholder('author')
+                .setValue(this.plugin.settingsManager.getSettings().frontmatterAuthorKey)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        frontmatterAuthorKey: value || 'author',
+                    });
+                }));
+
         const isExtractEnabled = this.plugin.settingsManager.getSettings().extractFromFrontmatter;
         titleKeySetting.settingEl.toggle(isExtractEnabled);
         descKeySetting.settingEl.toggle(isExtractEnabled);
+        authorKeySetting.settingEl.toggle(isExtractEnabled);
 
         // ── 图片设置 ──────────────────────────────────
 
