@@ -5,6 +5,7 @@ import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
 import type { ThemeManager } from './themeManager';
 import { parseCssString, IMAGE_CAPTION_STYLE, inlineCSSWithJuice } from './utils/css-props';
 import { collectTextNodes } from './utils/dom-utils';
+import { processLinksToFootnotes } from './utils/footnotes';
 
 export class MPConverter {
     private static app: App;
@@ -30,10 +31,13 @@ export class MPConverter {
     private static processElements(container: HTMLElement | null, options?: { showImageCaption?: boolean }): void {
         if (!container) return;
 
-        // 1. 先处理列表（核心逻辑）
+        // 1. 在列表转换前统一处理原生脚注和外链脚注
+        processLinksToFootnotes(container);
+
+        // 2. 处理列表（核心逻辑）
         this.processLists(container);
 
-        // 2. 处理代码块
+        // 3. 处理代码块
         container.querySelectorAll('pre').forEach(pre => {
             // 过滤掉 frontmatter
             if (pre.classList.contains('frontmatter')) {
@@ -64,10 +68,10 @@ export class MPConverter {
             }
         });
 
-        // 3. 处理 callout（Obsidian 的提示框）
+        // 4. 处理 callout（Obsidian 的提示框）
         this.processCallouts(container);
 
-        // 4. 处理图片
+        // 5. 处理图片
         container.querySelectorAll('span.internal-embed[alt][src]').forEach(el => {
             const originalSpan = el as HTMLElement;
             const src = originalSpan.getAttribute('src');
@@ -89,9 +93,6 @@ export class MPConverter {
                 console.error('图片处理失败:', error);
             }
         });
-
-        // 5. 处理链接：外部链接转脚注，内部链接转纯文本
-        this.processLinksToFootnotes(container);
 
         // 6. 处理图片描述
         if (options?.showImageCaption) {
@@ -131,73 +132,6 @@ export class MPConverter {
             });
         } catch (error) {
             console.error('[mp-publisher] 图片描述处理失败:', error);
-        }
-    }
-
-    private static processLinksToFootnotes(container: HTMLElement): void {
-        try {
-            const urlToNum = new Map<string, number>();
-            const footnotes: { url: string; text: string }[] = [];
-
-            container.querySelectorAll('a').forEach(a => {
-                if (a.closest('pre')) return;
-
-                if (a.classList.contains('internal-link')) {
-                    const linkText = a.textContent || a.getAttribute('data-href') || '';
-                    a.replaceWith(activeDocument.createTextNode(linkText));
-                    return;
-                }
-
-                const href = a.getAttribute('href') || '';
-                if (href.startsWith('http://') || href.startsWith('https://')) {
-                    const linkText = a.textContent || href;
-
-                    let num = urlToNum.get(href);
-                    if (num === undefined) {
-                        num = footnotes.length + 1;
-                        urlToNum.set(href, num);
-                        footnotes.push({ url: href, text: linkText });
-                    }
-
-                    const sup = activeDocument.createElement('sup');
-                    sup.setCssProps(parseCssString('font-size: 0.75em;'));
-                    sup.textContent = `[${num}]`;
-
-                    const linkSpan = activeDocument.createElement('span');
-                    linkSpan.setCssProps(parseCssString('text-decoration: underline;'));
-                    while (a.firstChild) {
-                        linkSpan.appendChild(a.firstChild);
-                    }
-                    if (!linkSpan.childNodes.length) {
-                        linkSpan.appendChild(activeDocument.createTextNode(href));
-                    }
-
-                    const fragment = activeDocument.createDocumentFragment();
-                    fragment.appendChild(linkSpan);
-                    fragment.appendChild(sup);
-                    a.replaceWith(fragment);
-                }
-            });
-
-            if (footnotes.length > 0) {
-                const fnSection = activeDocument.createElement('section');
-                fnSection.setCssProps(parseCssString(
-                    'margin-top: 1.5em; padding-top: 0.75em; border-top: 1px solid #e0e0e0;'
-                ));
-
-                footnotes.forEach((fn, i) => {
-                    const item = activeDocument.createElement('section');
-                    item.setCssProps(parseCssString(
-                        'font-size: 0.85em; color: #888; margin: 0.25em 0;'
-                    ));
-                    item.textContent = `[${i + 1}] ${fn.text}：${fn.url}`;
-                    fnSection.appendChild(item);
-                });
-
-                container.appendChild(fnSection);
-            }
-        } catch (error) {
-            console.error('[mp-publisher] 链接转脚注失败:', error);
         }
     }
 
