@@ -440,15 +440,15 @@ export class PublishModal extends Modal {
 		authorSetting.controlEl.appendChild(authorDataList);
 
 		// 从 frontmatter 提取标题、描述和作者
-		if (this.plugin.settings.extractFromFrontmatter) {
+		if (this.plugin.mpSettings.extractFromFrontmatter) {
 			const file = this.markdownView.file;
 			if (file) {
 				const cache = this.app.metadataCache.getFileCache(file);
 				const frontmatter = cache?.frontmatter;
 				if (frontmatter) {
-					const titleKey = this.plugin.settings.frontmatterTitleKey;
-					const descKey = this.plugin.settings.frontmatterDescriptionKey;
-					const authorKey = this.plugin.settings.frontmatterAuthorKey;
+					const titleKey = this.plugin.mpSettings.frontmatterTitleKey;
+					const descKey = this.plugin.mpSettings.frontmatterDescriptionKey;
+					const authorKey = this.plugin.mpSettings.frontmatterAuthorKey;
 					const titleValue: unknown = frontmatter[titleKey];
 					if (typeof titleValue === 'string' && titleValue) {
 						this.titleInput.value = titleValue;
@@ -466,12 +466,12 @@ export class PublishModal extends Modal {
 		}
 
 		// 默认填入上次发布使用的作者
-		if (!this.authorInput.value && this.plugin.settings.authorList.length > 0) {
-			this.authorInput.value = this.plugin.settings.authorList[this.plugin.settings.authorList.length - 1];
+		if (!this.authorInput.value && this.plugin.mpSettings.authorList.length > 0) {
+			this.authorInput.value = this.plugin.mpSettings.authorList[this.plugin.mpSettings.authorList.length - 1];
 		}
 
 		// 填充作者候选列表：历史发布过的作者 + 当前属性中的作者
-		const authorCandidates = [...this.plugin.settings.authorList];
+		const authorCandidates = [...this.plugin.mpSettings.authorList];
 		const currentAuthor = this.authorInput.value;
 		if (currentAuthor && !authorCandidates.includes(currentAuthor)) {
 			authorCandidates.push(currentAuthor);
@@ -612,8 +612,9 @@ export class PublishModal extends Modal {
 						content,
 						this.markdownView.file?.path || '',
 						this.plugin.themeManager,
-						this.plugin.settings.convertMathToSVG,
-						this.plugin.settings.showImageCaption,
+						this.plugin.mpSettings.convertMathToSVG,
+						this.plugin.mpSettings.showImageCaption,
+						this.plugin.mpSettings.convertLinksToFootnotes,
 					);
 
 					if (platform === 'wechat') {
@@ -670,4 +671,4 @@ export class PublishModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 	}
-} 
+}

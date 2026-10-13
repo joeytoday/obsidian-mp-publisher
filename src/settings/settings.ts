@@ -31,6 +31,8 @@ export interface MPSettings {
     hiddenThemeIds: string[];
     // 数学公式设置
     convertMathToSVG: boolean;
+    // 将 Markdown 外链转为脚注
+    convertLinksToFootnotes: boolean;
     // 从 frontmatter 提取标题、描述和作者
     extractFromFrontmatter: boolean;
     frontmatterTitleKey: string;
@@ -62,6 +64,8 @@ const DEFAULT_SETTINGS: MPSettings = {
     hiddenThemeIds: [],
     // 数学公式默认设置
     convertMathToSVG: true,
+    // 链接转脚注默认开启，保持现有行为
+    convertLinksToFootnotes: true,
     // 从 frontmatter 提取标题、描述和作者（默认关闭）
     extractFromFrontmatter: false,
     frontmatterTitleKey: 'title',

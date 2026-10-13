@@ -85,4 +85,18 @@ describe('processLinksToFootnotes', () => {
 		expect(container.querySelector('pre a')?.getAttribute('href')).toBe('https://example.com');
 		expect(container.querySelector('.mp-footnotes')).toBeNull();
 	});
+
+	it('keeps external links when conversion is disabled but still processes native footnotes', () => {
+		const container = createContainer(`
+			<p><a href="https://example.com"><strong>示例</strong></a></p>
+			<p>原生脚注<sup class="footnote-ref"><a href="#fn-note">1</a></sup></p>
+			<section class="footnotes"><ol><li id="fn-note"><p>脚注正文 <a href="#fnref-note" class="footnote-backref">↩</a></p></li></ol></section>
+		`);
+
+		processLinksToFootnotes(container, { convertExternalLinks: false });
+
+		expect(container.querySelector('a[href="https://example.com"]')?.textContent).toBe('示例');
+		expect(container.querySelector('.footnote-ref')?.textContent).toBe('[1]');
+		expect(container.querySelector('.mp-footnote-item')?.textContent).toBe('[1] 脚注正文');
+	});
 });

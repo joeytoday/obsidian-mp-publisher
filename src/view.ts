@@ -217,8 +217,9 @@ export class MPView extends ItemView {
                         content,
                         this.currentFile.path,
                         this.themeManager,
-                        this.plugin.settings.convertMathToSVG,
+                        this.plugin.mpSettings.convertMathToSVG,
                         this.settingsManager.getSettings().showImageCaption,
+                        this.settingsManager.getSettings().convertLinksToFootnotes,
                     );
 
                     // 创建临时容器并复制
@@ -518,6 +519,7 @@ export class MPView extends ItemView {
 
         MPConverter.formatContent(this.previewEl, {
             showImageCaption: this.settingsManager.getSettings().showImageCaption,
+            convertLinksToFootnotes: this.settingsManager.getSettings().convertLinksToFootnotes,
         });
 
         // 使用新的 CSS 主题系统：注入 <style> 标签

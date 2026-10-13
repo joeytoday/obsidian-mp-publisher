@@ -1,6 +1,6 @@
 {
   "name": "mp-publisher",
-  "version": "2.7.11",
+  "version": "2.7.12",
   "description": "公众号发布插件，支持自定义样式预览和一键发布到微信公众号",
   "main": "main.js",
   "scripts": {
@@ -19,13 +19,12 @@
   "license": "AGPL-3.0",
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "@typescript-eslint/eslint-plugin": "5.29.0",
-    "@typescript-eslint/parser": "5.29.0",
     "esbuild": "0.28.1",
     "jsdom": "^29.1.1",
     "obsidian": "latest",
     "tslib": "2.4.0",
     "typescript": "4.7.4",
+    "vite": "^8.3.0",
     "vitest": "^5.0.0"
   },
   "dependencies": {

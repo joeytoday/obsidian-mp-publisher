@@ -5,7 +5,7 @@ import { ThemeManagerView, VIEW_TYPE_THEME_MANAGER } from './themeManagerView';
 import { ThemePreviewView, VIEW_TYPE_THEME_PREVIEW } from './themePreviewView';
 import { ThemeCSSView, VIEW_TYPE_THEME_CSS } from './themeCSSView';
 import { MarkdownDocView, VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from './guideView';
-import { SettingsManager } from './settings/settings';
+import { SettingsManager, type MPSettings } from './settings/settings';
 import { MPConverter } from './converter';
 import { DonateManager } from './donateManager';
 import { MPSettingTab } from './settings/MPSettingTab';
@@ -20,8 +20,7 @@ export default class MPPublisherPlugin extends Plugin {
   logger!: Logger;
   showPublishModal = showPublishModal;
 
-  // 为了兼容性，添加 settings getter
-  get settings() {
+  get mpSettings(): MPSettings {
     return this.settingsManager.getSettings();
   }
 
@@ -35,8 +34,8 @@ export default class MPPublisherPlugin extends Plugin {
     await this.settingsManager.loadSettings();
 
     // 设置调试模式
-    this.logger.setDebugMode(this.settings.debugMode);
-    this.logger.debug('调试模式已启用:', this.settings.debugMode);
+    this.logger.setDebugMode(this.mpSettings.debugMode);
+    this.logger.debug('调试模式已启用:', this.mpSettings.debugMode);
 
     // 初始化 CSS 主题管理器
     this.themeManager = new ThemeManager(this.app, this);

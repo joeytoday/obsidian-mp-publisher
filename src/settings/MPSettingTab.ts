@@ -86,6 +86,17 @@ export class MPSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
+            .setName('链接转脚注')
+            .setDesc('开启后，预览、复制和发布时将 Markdown 外链转为文末脚注')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().convertLinksToFootnotes)
+                .onChange(async (value) => {
+                    await this.plugin.settingsManager.updateSettings({
+                        convertLinksToFootnotes: value,
+                    });
+                }));
+
+        new Setting(containerEl)
             .setName('从属性提取标题、描述和作者')
             .setDesc('开启后，发布时自动从 Markdown 属性中提取标题、描述和作者，填充到发布表单')
             .addToggle(toggle => toggle

@@ -24,6 +24,6 @@
   "exclude": [
     "skills",
     "**/*.test.ts",
-    "vitest.config.ts"
+    "vitest.config.mts"
   ]
 }

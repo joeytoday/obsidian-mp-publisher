@@ -1,5 +1,7 @@
 import { sanitizeHTMLToDom } from 'obsidian';
 
+export { collectTextNodes } from './text-nodes';
+
 /**
  * 处理列表项内部的 p 标签内联化。
  * 列表已在 converter.ts 中转换为 section + p 结构，
@@ -13,21 +15,6 @@ export function processListItems(container: HTMLElement): void {
 			(pEl as HTMLElement).setCssProps({ display: 'inline', margin: '0', padding: '0' });
 		});
 	});
-}
-
-/**
- * 收集元素内所有文本节点（使用 TreeWalker）
- * 统一 converter.ts 和 wechat.ts 中重复的 TreeWalker 遍历逻辑
- */
-export function collectTextNodes(element: Element): Text[] {
-	const doc = element.ownerDocument;
-	const walker = doc.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-	const textNodes: Text[] = [];
-	let node: Node | null;
-	while ((node = walker.nextNode())) {
-		textNodes.push(node as Text);
-	}
-	return textNodes;
 }
 
 /**

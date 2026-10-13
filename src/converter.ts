@@ -4,8 +4,9 @@ import { preprocessMathFormula, waitForAsyncRender, convertMathToSVG as mathToSV
 import { prerenderPseudoElements } from './utils/pseudo-element-renderer';
 import type { ThemeManager } from './themeManager';
 import { parseCssString, IMAGE_CAPTION_STYLE, inlineCSSWithJuice } from './utils/css-props';
-import { collectTextNodes } from './utils/dom-utils';
 import { processLinksToFootnotes } from './utils/footnotes';
+import { convertCodeBlockLines } from './utils/code-blocks';
+import { serializeChildNodes } from './utils/html-serialization';
 
 export class MPConverter {
     private static app: App;
@@ -14,7 +15,10 @@ export class MPConverter {
         this.app = app;
     }
 
-    static formatContent(element: HTMLElement, options?: { showImageCaption?: boolean }): void {
+    static formatContent(
+        element: HTMLElement,
+        options?: { showImageCaption?: boolean; convertLinksToFootnotes?: boolean },
+    ): void {
         // 创建 section 容器
         const section = activeDocument.createElement('section');
         section.className = 'mp-content-section';
@@ -28,11 +32,16 @@ export class MPConverter {
         this.processElements(section, options);
     }
 
-    private static processElements(container: HTMLElement | null, options?: { showImageCaption?: boolean }): void {
+    private static processElements(
+        container: HTMLElement | null,
+        options?: { showImageCaption?: boolean; convertLinksToFootnotes?: boolean },
+    ): void {
         if (!container) return;
 
         // 1. 在列表转换前统一处理原生脚注和外链脚注
-        processLinksToFootnotes(container);
+        processLinksToFootnotes(container, {
+            convertExternalLinks: options?.convertLinksToFootnotes,
+        });
 
         // 2. 处理列表（核心逻辑）
         this.processLists(container);
@@ -355,179 +364,6 @@ function applyCodeHighlightStyles(container: HTMLElement): void {
         });
     });
 }
-/**
- * 将代码块每行包裹在 section 中，用 padding-left 实现缩进
- * 同时将行内空格替换为 NBSP（U+00A0）
- * 
- * 微信公众号保存时会移除 white-space: pre-wrap 并折叠空格（包括 NBSP）
- * 仅靠空格字符无法可靠保留缩进，必须用 CSS padding-left 作为缩进载体
- * 
- * 策略：
- * 1. 先将所有普通空格替换为 NBSP（保护行内间距）
- * 2. 在 DOM 层面按换行符拆分文本节点，识别行首 NBSP 数量
- * 3. 每行用 section 包裹，padding-left = 行首 NBSP 数量 × 0.5em
- * 4. 移除行首 NBSP（由 padding-left 替代），保留行内 NBSP 和语法高亮 span
- */
-function convertCodeBlockLines(container: HTMLElement): void {
-    const NBSP = '\u00A0';
-
-    // Step 1: 将代码块内所有普通空格替换为 NBSP
-    container.querySelectorAll('pre code').forEach(codeEl => {
-        const textNodes = collectTextNodes(codeEl);
-
-        for (const textNode of textNodes) {
-            const text = textNode.textContent || '';
-            if (!text.length) continue;
-            const converted = text.replace(/ /g, NBSP);
-            if (converted !== text) {
-                textNode.textContent = converted;
-            }
-        }
-    });
-
-    // Step 2: 按行拆分代码块，每行用 section + padding-left 实现缩进
-    // 在 DOM 层面操作，保留语法高亮 span 结构
-    container.querySelectorAll('pre code').forEach(codeEl => {
-        // 2a: 先将所有含 \n 的文本节点按换行拆分
-        //     确保每个文本节点只属于一行
-        const textNodes = collectTextNodes(codeEl);
-
-        for (const textNode of textNodes) {
-            const text = textNode.textContent || '';
-            if (!text.includes('\n')) continue;
-
-            const parts = text.split('\n');
-            const fragment = activeDocument.createDocumentFragment();
-            parts.forEach((part, idx) => {
-                if (idx > 0) {
-                    fragment.appendChild(activeDocument.createTextNode('\n'));
-                }
-                if (part.length > 0) {
-                    fragment.appendChild(activeDocument.createTextNode(part));
-                }
-            });
-            textNode.parentNode?.replaceChild(fragment, textNode);
-        }
-
-        // 2b: 将 code 的子节点按 \n 文本节点拆分为行组
-        //     每个行组包含该行的所有元素（span、文本节点等）
-        const childNodes = Array.from(codeEl.childNodes);
-        const lineGroups: Node[][] = [[]];
-        
-        for (const child of childNodes) {
-            // 检查是否是换行文本节点
-            if (child.nodeType === Node.TEXT_NODE && child.textContent === '\n') {
-                lineGroups.push([]); // 开始新行
-            } else {
-                lineGroups[lineGroups.length - 1].push(child);
-            }
-        }
-
-        // 过滤掉空行组（连续换行产生的）
-        const nonEmptyGroups = lineGroups.filter(group => group.length > 0);
-
-        if (nonEmptyGroups.length <= 1) return; // 单行代码块无需处理
-
-        // 2c: 为每行计算行首 NBSP 数量，移除行首 NBSP，设置 padding-left
-        const lineSections: HTMLElement[] = [];
-
-        for (const group of nonEmptyGroups) {
-            // 计算行首 NBSP 数量：遍历行组中的文本节点，统计连续的行首 NBSP
-            let leadingNbspCount = 0;
-
-            for (const child of group) {
-                if (child.nodeType === Node.TEXT_NODE) {
-                    const text = child.textContent || '';
-                    for (const char of text) {
-                        if (char === NBSP) {
-                            leadingNbspCount++;
-                        } else {
-                            break; // 遇到非 NBSP 字符，停止计数
-                        }
-                    }
-                    if (leadingNbspCount > 0 && text.length === leadingNbspCount) {
-                        // 整个文本节点都是行首 NBSP，继续看下一个节点
-                        continue;
-                    }
-                    break; // 文本节点包含非 NBSP 内容，行首部分结束
-                } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    // span 元素：检查其第一个文本子节点
-                    const firstText = (child as HTMLElement).textContent || '';
-                    for (const char of firstText) {
-                        if (char === NBSP) {
-                            leadingNbspCount++;
-                        } else {
-                            break;
-                        }
-                    }
-                    break; // span 元素后不再属于行首
-                } else {
-                    break;
-                }
-            }
-
-            // 2d: 移除行首 NBSP
-            let removedCount = 0;
-            for (const child of group) {
-                if (removedCount >= leadingNbspCount) break;
-
-                if (child.nodeType === Node.TEXT_NODE) {
-                    const text = child.textContent || '';
-                    const remaining = leadingNbspCount - removedCount;
-                    const nbspInNode = text.length <= remaining ? text.length : remaining;
-
-                    if (nbspInNode === text.length) {
-                        // 整个文本节点都是行首 NBSP，移除
-                        child.textContent = '';
-                        removedCount += text.length;
-                    } else {
-                        // 部分是行首 NBSP，截取移除
-                        child.textContent = text.slice(nbspInNode);
-                        removedCount += nbspInNode;
-                    }
-                } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    const el = child as HTMLElement;
-                    const firstTextChild = el.childNodes[0];
-                    if (firstTextChild && firstTextChild.nodeType === Node.TEXT_NODE) {
-                        const text = firstTextChild.textContent || '';
-                        const remaining = leadingNbspCount - removedCount;
-                        const nbspInNode = text.length <= remaining ? text.length : remaining;
-
-                        if (nbspInNode === text.length) {
-                            firstTextChild.textContent = '';
-                        } else {
-                            firstTextChild.textContent = text.slice(nbspInNode);
-                        }
-                        removedCount += nbspInNode;
-                    }
-                    break;
-                } else {
-                    break;
-                }
-            }
-
-            // 2e: 创建 section 包裹该行
-            const section = activeDocument.createElement('section');
-            section.setCssProps(parseCssString(
-                `display: block; margin: 0; padding: 0; padding-left: ${leadingNbspCount * 0.5}em; line-height: 1.6;`
-            ));
-
-            for (const child of group) {
-                // 移除空文本节点（行首 NBSP 被清空后产生的）
-                if (child.nodeType === Node.TEXT_NODE && !child.textContent?.length) continue;
-                section.appendChild(child);
-            }
-
-            lineSections.push(section);
-        }
-
-        // 2f: 用 section 行替换 code 内容
-        codeEl.empty();
-        lineSections.forEach(section => {
-            codeEl.appendChild(section);
-        });
-    });
-}
 const VIDEO_EXT_REGEX = /\.(mp4|webm|ogg|ogv|mov|avi|mkv|m4v|flv|wmv)(\?|$)/i;
 
 /**
@@ -587,6 +423,7 @@ export async function markdownToHtml(
     themeManager?: ThemeManager,
     convertMathToSVG: boolean = false,
     showImageCaption: boolean = false,
+    convertLinksToFootnotes: boolean = true,
 ): Promise<string> {
     const tempDiv = activeDocument.createElement('div');
     tempDiv.setCssProps({ position: 'fixed', left: '-9999px', top: '0', width: '1000px' });
@@ -625,7 +462,10 @@ export async function markdownToHtml(
         }
 
         // 格式化内容（创建 section 容器、处理代码块等）
-        MPConverter.formatContent(tempDiv, { showImageCaption });
+        MPConverter.formatContent(tempDiv, {
+            showImageCaption,
+            convertLinksToFootnotes,
+        });
 
         // 将代码高亮的 computed style 写入 inline style
         // Obsidian 的代码高亮颜色通过 CSS class 产生，不在主题 CSS 中，
@@ -649,13 +489,12 @@ export async function markdownToHtml(
         tempDiv.removeAttribute('style');
 
         // 序列化 HTML（伪元素已转为真实 DOM，可安全序列化）
-        const serializer = new XMLSerializer();
         const cleanContainer = activeDocument.createElement('div');
         while (tempDiv.firstChild) {
             cleanContainer.appendChild(tempDiv.firstChild);
         }
 
-        let htmlContent = serializer.serializeToString(cleanContainer);
+        let htmlContent = serializeChildNodes(cleanContainer);
         htmlContent = htmlContent.replace(/ xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, '');
 
         // 处理数学公式（使用在线 API 转为图片）

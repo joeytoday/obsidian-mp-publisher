@@ -163,8 +163,8 @@ export class WechatPublisher {
         }
         // 回退到旧的全局配置
         return {
-            appId: this.plugin.settings.wechatAppId.trim(),
-            appSecret: this.plugin.settings.wechatAppSecret.trim(),
+            appId: this.plugin.mpSettings.wechatAppId.trim(),
+            appSecret: this.plugin.mpSettings.wechatAppSecret.trim(),
         };
     }
 
@@ -777,9 +777,9 @@ export class WechatPublisher {
                 }
 
                 // 发布成功，将作者累积到候选列表
-                if (author && !this.plugin.settings.authorList.includes(author)) {
+                if (author && !this.plugin.mpSettings.authorList.includes(author)) {
                     await this.plugin.settingsManager.updateSettings({
-                        authorList: [...this.plugin.settings.authorList, author],
+                        authorList: [...this.plugin.mpSettings.authorList, author],
                     });
                 }
 

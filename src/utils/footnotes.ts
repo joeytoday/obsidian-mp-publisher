@@ -198,8 +198,12 @@ function appendFootnoteSection(container: HTMLElement, entries: FootnoteEntry[])
  * 将 Obsidian 原生脚注和 Markdown 外链统一转换为公众号可展示的脚注。
  * 输出中不保留页内锚点，避免微信草稿接口拒绝 footnote href/id。
  */
-export function processLinksToFootnotes(container: HTMLElement): void {
+export function processLinksToFootnotes(
+	container: HTMLElement,
+	options: { convertExternalLinks?: boolean } = {},
+): void {
 	try {
+		const { convertExternalLinks = true } = options;
 		const definitions = collectNativeDefinitions(container);
 		const definitionsById = new Map(definitions.map(definition => [definition.id, definition]));
 		const nativeNumbers = new Map<string, number>();
@@ -229,6 +233,7 @@ export function processLinksToFootnotes(container: HTMLElement): void {
 
 			const href = anchor.getAttribute('href') || '';
 			if (!href.startsWith('http://') && !href.startsWith('https://')) return;
+			if (!convertExternalLinks) return;
 
 			const linkText = anchor.textContent || href;
 			let number = urlNumbers.get(href);
